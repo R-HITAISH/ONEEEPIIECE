@@ -47,7 +47,7 @@ export function Footer() {
 
         <div className="hairline-t mt-16 pt-8">
           <p className="label" style={{ color: 'var(--ink-2)' }}>
-            &copy; 2026 ONEPIECE, Bengaluru
+            &copy; 2026 ONEPIECE, Bangalore
           </p>
         </div>
       </div>

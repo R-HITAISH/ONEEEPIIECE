@@ -39,7 +39,7 @@ export function AboutPage() {
           </div>
           <div className="md:pt-4">
             <p className="label mb-1">Established</p>
-            <p className="font-display text-xl" style={{ fontWeight: 400 }}>2026 · Pune, India</p>
+            <p className="font-display text-xl" style={{ fontWeight: 400 }}>2026 · Bangalore, India</p>
           </div>
         </div>
       </section>

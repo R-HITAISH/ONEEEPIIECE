@@ -66,9 +66,9 @@ export const worstCaseCheckoutForm = {
   name: 'Aleksandra Wi\u015Bniewska-Kowalczyk',
   email: 'bartholomew.fitzgerald@northwind-industries-holdings.example.com',
   phone: '07829 294 422',
-  address: 'Flat 4B, Sai Krupa Apartments, Opposite Reva University Gate 2, 3rd Cross, Kattigenahalli, Bengaluru, Karnataka 560064',
+  address: 'Flat 4B, Sai Krupa Apartments, Opposite Reva University Gate 2, 3rd Cross, Kattigenahalli, Bangalore, Karnataka 560064',
   flat: 'Flat 4B, Sai Krupa Apartments, Opposite Reva University Gate 2',
-  city: 'Bengaluru',
+  city: 'Bangalore',
   state: 'Karnataka',
   pincode: '560064',
 };

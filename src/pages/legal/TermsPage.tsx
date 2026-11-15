@@ -118,7 +118,7 @@ export function TermsPage() {
               If you have a dispute regarding a purchase or sale, please first contact us at support@onepiece.in
               within 3 days of the issue arising. We will attempt to resolve the matter directly. If the dispute
               cannot be resolved within 14 days of your initial contact, the matter shall be referred to
-              arbitration in Bengaluru, India, under the Arbitration and Conciliation Act, 1996. The arbitral
+              arbitration in Bangalore, India, under the Arbitration and Conciliation Act, 1996. The arbitral
               tribunal shall consist of a sole arbitrator appointed by mutual consent. The language of the
               arbitration shall be English.
             </p>
@@ -136,7 +136,7 @@ export function TermsPage() {
           <section>
             <h2 className="font-display text-xl mb-3 pt-6 hairline-t" style={{ fontWeight: 400 }}>9. Governing Law</h2>
             <p>
-              These Terms are governed by the laws of India. The courts at Bengaluru shall have exclusive
+              These Terms are governed by the laws of India. The courts at Bangalore shall have exclusive
               jurisdiction over any matters not resolved through arbitration.
             </p>
           </section>

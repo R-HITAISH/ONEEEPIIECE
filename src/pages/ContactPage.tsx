@@ -35,7 +35,7 @@ export function ContactPage() {
 
   return <section className="page py-12 md:py-20 max-w-3xl">
     <p className="label mb-2">We’re here to help</p><h1 className="font-display mb-4" style={{ fontWeight: 400 }}>Contact us</h1>
-    <p className="mb-8" style={{ color: 'var(--ink-2)' }}>Questions about a piece, your order or selling with us? Send a note and our Bengaluru team will get back to you.</p>
+    <p className="mb-8" style={{ color: 'var(--ink-2)' }}>Questions about a piece, your order or selling with us? Send a note and our Bangalore team will get back to you.</p>
     <form onSubmit={(event) => void submit(event)} className="grid sm:grid-cols-2 gap-5">
       <HoneypotField onFilled={() => setSent(true)} />
       <label className="label-field">Name<input className="input mt-2" required maxLength={120} value={form.name} onChange={(event) => update('name', event.target.value)} /></label>

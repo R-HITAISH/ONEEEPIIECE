@@ -2,7 +2,7 @@ export const brand = {
   name: 'ONEPIECE',
   tagline: 'Found once. Kept forever.',
   description: 'Second-hand pieces, checked by hand and told honestly. Found in India.',
-  location: 'Pune, India',
+  location: 'Bangalore, India',
   whatsappNumber: '',
   instagramUrl: 'https://www.instagram.com/',
   categories: [
