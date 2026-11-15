@@ -188,6 +188,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
         <meta property="og:type" content="product" /><meta property="og:title" content={`${item.name} | ONEEEPIIECE`} />
         <meta property="og:description" content={item.description ?? `${item.condition} ${item.category} — one of one.`} />
         {item.photos[0] && <meta property="og:image" content={item.photos[0]} />}
+        {item.photos[0] && <meta name="twitter:image" content={item.photos[0]} />}
         <meta property="product:price:amount" content={String(item.price_inr)} /><meta property="product:price:currency" content="INR" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
