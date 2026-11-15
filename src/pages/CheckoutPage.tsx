@@ -10,9 +10,34 @@ type CheckoutStep = 'address' | 'processing' | 'success' | 'failed';
 
 declare global {
   interface Window {
-    Razorpay?: any;
+    Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
   }
 }
+
+type RazorpayCheckoutResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number;
+  currency: 'INR';
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: { name: string; contact: string };
+  handler: (response: RazorpayCheckoutResponse) => Promise<void>;
+  modal: { ondismiss: () => void };
+};
+
+type RazorpayInstance = {
+  open: () => void;
+  on: (event: 'payment.failed', callback: () => void) => void;
+};
+
+type CreateRazorpayOrderResponse = { razorpay_order_id: string; key_id: string; error?: string };
 
 type FormState = {
   name: string;
@@ -137,7 +162,7 @@ export function CheckoutPage() {
         throw new Error(errBody.error || 'Could not initiate payment.');
       }
 
-      const razorpayData = await createRes.json();
+      const razorpayData = await createRes.json() as CreateRazorpayOrderResponse;
       const razorpayOrderId = razorpayData.razorpay_order_id;
 
       await supabase.from('orders').update({ razorpay_order_id: razorpayOrderId }).eq('id', order.id);
@@ -153,7 +178,7 @@ export function CheckoutPage() {
         description: 'One-of-one streetwear purchase',
         order_id: razorpayOrderId,
         prefill: { name: form.name, contact: form.phone },
-        handler: async (response: any) => {
+        handler: async (response: RazorpayCheckoutResponse) => {
           try {
             const verifyRes = await fetch(`${supabaseUrl}/functions/v1/razorpay-verify`, {
               method: 'POST',

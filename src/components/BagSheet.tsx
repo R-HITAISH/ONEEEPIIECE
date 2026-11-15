@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '@/context/CartContext';
 import { Link, useRouter } from '@/router/Router';
@@ -14,7 +14,6 @@ export function BagSheet({ open, onClose }: BagSheetProps) {
   const { cartItems, loading, removeFromCart } = useCart();
   const { navigate } = useRouter();
   const [, setTick] = useState(0);
-  const dragControlsRef = useRef(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {

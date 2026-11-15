@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
+import {
+  BrowserRouter,
+  Link as RouterLink,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
 type RouterContextValue = {
   path: string;
@@ -7,23 +13,22 @@ type RouterContextValue = {
 
 const RouterContext = createContext<RouterContextValue | undefined>(undefined);
 
-export function RouterProvider({ children }: { children: ReactNode }) {
-  const [path, setPath] = useState(window.location.pathname);
-
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
-
-  const navigate = (to: string) => {
-    window.history.pushState({}, '', to);
-    setPath(to);
-    window.scrollTo(0, 0);
-  };
+function RouterBridge({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   return (
-    <RouterContext.Provider value={{ path, navigate }}>{children}</RouterContext.Provider>
+    <RouterContext.Provider value={{ path: pathname, navigate: (to) => navigate(to) }}>
+      {children}
+    </RouterContext.Provider>
+  );
+}
+
+export function RouterProvider({ children }: { children: ReactNode }) {
+  return (
+    <BrowserRouter>
+      <RouterBridge>{children}</RouterBridge>
+    </BrowserRouter>
   );
 }
 
@@ -46,19 +51,9 @@ export function Link({
   onClick?: () => void;
   style?: CSSProperties;
 }) {
-  const { navigate } = useRouter();
   return (
-    <a
-      href={to}
-      className={className}
-      style={style}
-      onClick={(e) => {
-        e.preventDefault();
-        navigate(to);
-        onClick?.();
-      }}
-    >
+    <RouterLink to={to} className={className} style={style} onClick={onClick}>
       {children}
-    </a>
+    </RouterLink>
   );
 }

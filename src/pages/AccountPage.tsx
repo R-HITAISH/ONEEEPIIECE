@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useRouter } from '@/router/Router';
 import { supabase, type Order, type OrderItem } from '@/lib/supabase';
-import { formatINR, timeAgo } from '@/lib/utils';
+import { formatINR, timeAgo, productPath } from '@/lib/utils';
 import { Loader2, Package } from 'lucide-react';
 
 type OrderWithItems = Order & {
@@ -47,7 +47,8 @@ export function AccountPage() {
   const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
   // Derive phone from user metadata if available
-  const phone = (user as any).phone ?? (user as any).user_metadata?.phone ?? '—';
+  const metadataPhone: unknown = user.user_metadata.phone;
+  const phone = user.phone ?? (typeof metadataPhone === 'string' ? metadataPhone : '—');
   const email = user.email ?? '—';
 
   return (
@@ -89,7 +90,7 @@ export function AccountPage() {
                 </div>
                 <div className="space-y-3">
                   {order.order_items.map((oi) => (
-                    <Link key={oi.id} to={`/item/${oi.item_id}`} className="flex items-center gap-3">
+                    <Link key={oi.id} to={productPath(oi.item?.name ?? 'piece', oi.item_id)} className="flex items-center gap-3">
                       {oi.item?.photos?.[0] && (
                         <div className="w-12 h-16 product-media shrink-0 overflow-hidden">
                           <img src={oi.item.photos[0]} alt={oi.item?.name ?? ''} className="w-full h-full object-cover" />

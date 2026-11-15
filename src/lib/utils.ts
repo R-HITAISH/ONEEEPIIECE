@@ -11,6 +11,15 @@ export function formatINR(amount: number): string {
   return '₹' + amount.toLocaleString('en-IN');
 }
 
+export function productPath(name: string, id: string): string {
+  const slug = name
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `/product/${slug || 'piece'}-${id}`;
+}
+
 export function formatTimeRemaining(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
   if (ms <= 0) return '0:00';

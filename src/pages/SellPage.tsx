@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { supabase, CATEGORIES, CONDITIONS, SIZES } from '@/lib/supabase';
+import { supabase, CATEGORIES, SIZES } from '@/lib/supabase';
 import { getSessionId } from '@/lib/utils';
 import { Check, Upload, X, Loader2 } from 'lucide-react';
 
@@ -45,7 +45,7 @@ export function SellPage() {
       setError(null);
     }
     setPhotos([...photos, ...toAdd]);
-    setPhotoPreviews([...photoPreviews, ...toAdd.map((f) => URL.createObjectURL(f))]);
+    setPhotoPreviews((current) => [...current, ...toAdd.map((f) => URL.createObjectURL(f))]);
   }, [photos]);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

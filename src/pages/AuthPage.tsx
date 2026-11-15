@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useRouter } from '@/router/Router';
 import { AlertTriangle, Loader2, ArrowLeft } from 'lucide-react';
@@ -64,33 +64,12 @@ export function AuthPage() {
   const [otpError, setOtpError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(false);
-
-  // Auto-submit OTP when full
-  useEffect(() => {
-    if (otpSent && otpInput.length === 6 && !otpLoading) {
-      doVerify(otpInput);
-    }
-  }, [otpInput, otpSent]);
-
-  // Store return path
   const returnTo = (() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('returnTo') || '/account';
   })();
 
-  const handleSendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const digits = phoneInput.replace(/\D/g, '').replace(/^91/, '').slice(-10);
-    if (!validateIndianPhone(digits)) {
-      setPhoneError('Enter a valid 10-digit Indian mobile number.');
-      return;
-    }
-    setPhoneError(null);
-    const result = await sendOTP(digits);
-    if (result.error) setPhoneError(result.error);
-  };
-
-  const doVerify = async (code: string) => {
+  const doVerify = useCallback(async (code: string) => {
     setOtpError(null);
     const result = await verifyOTP(code);
     if (result.error) {
@@ -102,6 +81,25 @@ export function AuthPage() {
     } else {
       navigate(returnTo);
     }
+  }, [navigate, returnTo, verifyOTP]);
+
+  // Auto-submit OTP when full
+  useEffect(() => {
+    if (otpSent && otpInput.length === 6 && !otpLoading) {
+      doVerify(otpInput);
+    }
+  }, [otpInput, otpSent, otpLoading, doVerify]);
+
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const digits = phoneInput.replace(/\D/g, '').replace(/^91/, '').slice(-10);
+    if (!validateIndianPhone(digits)) {
+      setPhoneError('Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+    setPhoneError(null);
+    const result = await sendOTP(digits);
+    if (result.error) setPhoneError(result.error);
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {

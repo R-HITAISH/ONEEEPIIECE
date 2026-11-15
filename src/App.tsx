@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
-import { RouterProvider, useRouter } from '@/router/Router';
+import { RouterProvider } from '@/router/Router';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { BagSheet } from '@/components/BagSheet';
@@ -17,34 +18,62 @@ import { AccountPage } from '@/pages/AccountPage';
 import { TermsPage } from '@/pages/legal/TermsPage';
 import { PrivacyPage } from '@/pages/legal/PrivacyPage';
 import { RefundShippingPage } from '@/pages/legal/RefundShippingPage';
+import { SimplePage } from '@/pages/SimplePage';
 
-function Routes() {
-  const { path } = useRouter();
+function ProductRoute() {
+  const { slug = '' } = useParams();
+  const id = slug.match(/([0-9a-f]{8}-[0-9a-f-]{27,})$/i)?.[1] ?? slug;
+  return <ProductPage itemId={id} />;
+}
+
+function CategoryRoute() {
+  const { category } = useParams();
+  return <ShopPage initialCategory={category ?? null} />;
+}
+
+function StoreRoutes() {
   const [bagOpen, setBagOpen] = useState(false);
-
-  let page;
-  if (path === '/') page = <HomePage />;
-  else if (path === '/shop') page = <ShopPage />;
-  else if (path.startsWith('/item/')) page = <ProductPage itemId={path.split('/item/')[1]} />;
-  else if (path === '/bag' || path === '/cart') page = <BagPage />;
-  else if (path === '/checkout') page = <CheckoutPage />;
-  else if (path === '/sell') page = <SellPage />;
-  else if (path === '/about') page = <AboutPage />;
-  else if (path === '/auth') page = <AuthPage />;
-  else if (path === '/account') page = <AccountPage />;
-  else if (path === '/terms') page = <TermsPage />;
-  else if (path === '/privacy') page = <PrivacyPage />;
-  else if (path === '/refund-shipping') page = <RefundShippingPage />;
-  else page = <HomePage />;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--paper)' }}>
       <Navbar onBagClick={() => setBagOpen(true)} />
-      <main key={path} className="page-in flex-1">{page}</main>
+      <main className="page-in flex-1">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/shop/:category" element={<CategoryRoute />} />
+          <Route path="/product/:slug" element={<ProductRoute />} />
+          <Route path="/item/:itemId" element={<LegacyProductRoute />} />
+          <Route path="/cart" element={<BagPage />} />
+          <Route path="/bag" element={<BagPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order/:id" element={<SimplePage title="Your order" description="Order details will appear here once order history is enabled." />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/account/orders" element={<AccountPage />} />
+          <Route path="/wishlist" element={<SimplePage title="Your wishlist" description="Save the pieces you love and come back to them later." />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<SimplePage title="Contact us" description="Questions about an order or a piece? Email support@oneeepiiece.in and we’ll get back to you." />} />
+          <Route path="/shipping" element={<RefundShippingPage />} />
+          <Route path="/returns" element={<RefundShippingPage />} />
+          <Route path="/refund-shipping" element={<RefundShippingPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/sell" element={<SellPage />} />
+          <Route path="/admin/*" element={<SimplePage title="Store administration" description="Sign in with an authorized store account to manage the storefront." />} />
+          <Route path="*" element={<SimplePage title="Page not found" description="We couldn’t find that page. Explore the latest one-of-one pieces instead." action={{ label: 'Shop all pieces', to: '/shop' }} />} />
+        </Routes>
+      </main>
       <Footer />
       <BagSheet open={bagOpen} onClose={() => setBagOpen(false)} />
     </div>
   );
+}
+
+function LegacyProductRoute() {
+  const { itemId = '' } = useParams();
+  return <ProductPage itemId={itemId} />;
 }
 
 function App() {
@@ -52,7 +81,7 @@ function App() {
     <RouterProvider>
       <AuthProvider>
         <CartProvider>
-          <Routes />
+          <StoreRoutes />
         </CartProvider>
       </AuthProvider>
     </RouterProvider>

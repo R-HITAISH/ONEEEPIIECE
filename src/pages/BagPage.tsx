@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Link, useRouter } from '@/router/Router';
-import { formatINR, formatTimeRemaining } from '@/lib/utils';
+import { formatINR, formatTimeRemaining, productPath } from '@/lib/utils';
 import { Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export function BagPage() {
@@ -57,13 +57,13 @@ export function BagPage() {
                   key={ci.lock.id}
                   className={`flex gap-4 py-5 ${idx !== cartItems.length - 1 ? 'hairline-b' : ''} ${expired ? 'opacity-50' : ''}`}
                 >
-                  <Link to={`/item/${ci.item.id}`} className="shrink-0">
+                  <Link to={productPath(ci.item.name, ci.item.id)} className="shrink-0">
                     <div className="w-20 h-28 product-media overflow-hidden">
                       <img src={ci.item.photos[0] ?? ''} alt={ci.item.name} className="w-full h-full object-cover" />
                     </div>
                   </Link>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/item/${ci.item.id}`}>
+                    <Link to={productPath(ci.item.name, ci.item.id)}>
                       <h3 className="text-sm leading-snug mb-1 text-ink">{ci.item.name}</h3>
                     </Link>
                     <p className="label mb-1">Size {ci.item.size} · {ci.item.condition}</p>

@@ -5,15 +5,18 @@ import { X } from 'lucide-react';
 
 type SortOption = 'newest' | 'price-low' | 'price-high';
 
-export function ShopPage() {
+export function ShopPage({ initialCategory = null }: { initialCategory?: string | null }) {
   const [items, setItems] = useState<Item[]>([]);
-  const [soldItems, setSoldItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(initialCategory);
   const [size, setSize] = useState<string | null>(null);
   const [condition, setCondition] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>('newest');
   const [showArchive, setShowArchive] = useState(false);
+
+  useEffect(() => {
+    setCategory(initialCategory);
+  }, [initialCategory]);
 
   useEffect(() => {
     setLoading(true);
