@@ -37,7 +37,15 @@ type RazorpayInstance = {
   on: (event: 'payment.failed', callback: () => void) => void;
 };
 
-type CreateRazorpayOrderResponse = { razorpay_order_id: string; key_id: string; error?: string };
+type CheckoutOrderResponse = {
+  order_id: string;
+  razorpay_order_id?: string;
+  key_id?: string;
+  total_inr: number;
+  shipping_cost_inr: number;
+  cod_fee_inr: number;
+  status: string;
+};
 
 type FormState = {
   name: string;
@@ -52,7 +60,7 @@ type FormState = {
 type FormErrors = Partial<Record<keyof FormState, string>>;
 
 export function CheckoutPage() {
-  const { cartItems, loading: cartLoading, clearCart } = useCart();
+  const { cartItems, loading: cartLoading, clearCart, refreshCart } = useCart();
   const { user } = useAuth();
   const { navigate } = useRouter();
   const [step, setStep] = useState<CheckoutStep>('address');
@@ -69,8 +77,12 @@ export function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay');
 
-  const total = cartItems.reduce((sum, ci) => sum + ci.item.price_inr, 0);
+  const subtotal = cartItems.reduce((sum, ci) => sum + ci.item.price_inr, 0);
+  const shippingCost = subtotal >= 1999 ? 0 : 99;
+  const codFee = paymentMethod === 'cod' ? 49 : 0;
+  const total = subtotal + shippingCost + codFee;
   const validItems = cartItems.filter((ci) => new Date(ci.lock.expires_at) > new Date());
 
   useEffect(() => {
@@ -117,105 +129,65 @@ export function CheckoutPage() {
     setError(null);
     setStep('processing');
 
+    if (!user) {
+      navigate(`/auth?returnTo=${encodeURIComponent('/checkout')}`);
+      return;
+    }
+
     try {
-      const orderInsert: Record<string, unknown> = {
-        status: 'pending',
-        total_inr: total,
-        session_id: localStorage.getItem('oneeepiiece_session_id'),
-        shipping_name: form.name,
-        shipping_address: form.address,
-        shipping_city: form.city,
-        shipping_state: form.state,
-        shipping_pincode: form.pincode,
-        shipping_phone: form.phone,
-      };
-      if (user) orderInsert.user_id = user.id;
-
-      const { data: order, error: orderErr } = await supabase
-        .from('orders')
-        .insert(orderInsert)
-        .select()
-        .single();
-
-      if (orderErr || !order) throw new Error('Could not create order. Please try again.');
-
-      const orderItemsData = validItems.map((ci) => ({
-        order_id: order.id,
-        item_id: ci.item.id,
-        price_inr: ci.item.price_inr,
-      }));
-
-      const { error: oiErr } = await supabase.from('order_items').insert(orderItemsData);
-      if (oiErr) throw new Error('Could not save order items.');
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const createRes = await fetch(`${supabaseUrl}/functions/v1/razorpay-create-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${anonKey}` },
-        body: JSON.stringify({ order_id: order.id, amount: total * 100 }),
+      const phone = form.phone.replace(/\D/g, '').replace(/^91/, '');
+      const { data: orderData, error: createError } = await supabase.functions.invoke('razorpay-create-order', {
+        body: {
+          item_ids: validItems.map((cartItem) => cartItem.item.id),
+          shipping: { name: form.name, phone, address: form.address, extra: form.flat, city: form.city, state: form.state, pincode: form.pincode },
+          payment_method: paymentMethod,
+        },
       });
+      if (createError || !orderData) throw new Error(createError?.message ?? 'Could not create a secure order.');
+      const order = orderData as CheckoutOrderResponse;
+      setOrderId(order.order_id);
 
-      if (!createRes.ok) {
-        const errBody = await createRes.json().catch(() => ({}));
-        throw new Error(errBody.error || 'Could not initiate payment.');
+      if (paymentMethod === 'cod') {
+        await clearCart();
+        setStep('success');
+        navigate(`/order/${order.order_id}`);
+        return;
       }
+      if (!order.razorpay_order_id || !order.key_id || !window.Razorpay) throw new Error('Payment gateway is unavailable. Please return to your bag.');
 
-      const razorpayData = await createRes.json() as CreateRazorpayOrderResponse;
-      const razorpayOrderId = razorpayData.razorpay_order_id;
-
-      await supabase.from('orders').update({ razorpay_order_id: razorpayOrderId }).eq('id', order.id);
-      setOrderId(order.id);
-
-      if (!window.Razorpay) throw new Error('Payment gateway not loaded. Check your connection and try again.');
-
+      const cancelAttempt = async () => {
+        await supabase.functions.invoke('razorpay-cancel-order', { body: { order_id: order.order_id } });
+        await refreshCart();
+      };
       const rzp = new window.Razorpay({
-        key: razorpayData.key_id,
-        amount: total * 100,
+        key: order.key_id,
+        amount: order.total_inr * 100,
         currency: 'INR',
         name: 'ONEEEPIIECE',
-        description: 'One-of-one streetwear purchase',
-        order_id: razorpayOrderId,
-        prefill: { name: form.name, contact: form.phone },
+        description: 'One-of-one clothing purchase',
+        order_id: order.razorpay_order_id,
+        prefill: { name: form.name, contact: phone },
         handler: async (response: RazorpayCheckoutResponse) => {
-          try {
-            const verifyRes = await fetch(`${supabaseUrl}/functions/v1/razorpay-verify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${anonKey}` },
-              body: JSON.stringify({
-                order_id: order.id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-
-            if (!verifyRes.ok) {
-              const errBody = await verifyRes.json().catch(() => ({}));
-              throw new Error(errBody.error || 'Payment verification failed.');
-            }
-
-            await clearCart();
-            setStep('success');
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Payment verification failed.');
+          const { error: verifyError } = await supabase.functions.invoke('razorpay-verify', {
+            body: { order_id: order.order_id, ...response },
+          });
+          if (verifyError) {
+            await cancelAttempt();
+            setError('Payment confirmation could not be completed. Return to your bag and check availability.');
             setStep('failed');
+            return;
           }
+          await clearCart();
+          setStep('success');
+          navigate(`/order/${order.order_id}`);
         },
-        modal: {
-          ondismiss: () => {
-            setStep('address');
-            setError('Payment was cancelled. Your items are still in your bag.');
-          },
-        },
+        modal: { ondismiss: () => { void cancelAttempt(); setError('Payment was cancelled and the reservation released.'); setStep('failed'); } },
       });
-
       rzp.on('payment.failed', () => {
+        void cancelAttempt();
+        setError('Payment failed and the reservation was released. Return to your bag to check availability.');
         setStep('failed');
-        setError('Payment failed. Please try a different method.');
       });
-
       rzp.open();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -240,7 +212,8 @@ export function CheckoutPage() {
         <h1 style={{ fontWeight: 400 }} className="mb-3">Thank you. Your piece is yours.</h1>
         {orderId && <p className="label mb-2">Order ref: {orderId.slice(0, 8).toUpperCase()}</p>}
         <div className="mt-8 flex flex-wrap gap-4 justify-center">
-          <Link to="/account" className="btn btn-secondary">Orders</Link>
+          {orderId && <Link to={`/order/${orderId}`} className="btn btn-secondary">Track your order</Link>}
+          <Link to="/account/orders" className="text-link">Orders</Link>
           <Link to="/shop" className="text-link">Shop new pieces</Link>
         </div>
       </div>
@@ -254,12 +227,9 @@ export function CheckoutPage() {
           <AlertTriangle size={28} />
         </div>
         <h1 style={{ fontWeight: 400 }} className="mb-3">Payment didn't go through.</h1>
-        <p className="text-sm mb-6" style={{ color: 'var(--ink-2)' }}>You can try again.</p>
+        <p className="text-sm mb-6" style={{ color: 'var(--ink-2)' }}>Your reservation has been released. Return to your bag to check availability.</p>
         {error && <p className="text-sm mb-6" style={{ color: 'var(--error)' }}>{error}</p>}
-        <div className="flex gap-4 justify-center">
-          <button onClick={() => { setStep('address'); setError(null); }} className="btn btn-primary">Try again</button>
-          <Link to="/bag" className="btn btn-secondary">Back to bag</Link>
-        </div>
+        <div className="flex gap-4 justify-center"><Link to="/bag" className="btn btn-primary">Back to bag</Link></div>
       </div>
     );
   }
@@ -385,6 +355,18 @@ export function CheckoutPage() {
             {errors.pincode && <p className="mt-1 text-sm" style={{ color: 'var(--error)' }}>{errors.pincode}</p>}
           </div>
 
+          <fieldset className="space-y-3 border-t pt-5" style={{ borderColor: 'var(--hairline)' }}>
+            <legend className="label-ink mb-3">Payment method</legend>
+            <label className="flex items-start gap-3 p-4 border cursor-pointer" style={{ borderColor: paymentMethod === 'razorpay' ? 'var(--brass)' : 'var(--hairline)' }}>
+              <input type="radio" name="payment-method" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} />
+              <span><strong className="block text-sm">Pay online</strong><span className="label">UPI, cards and netbanking via Razorpay</span></span>
+            </label>
+            <label className="flex items-start gap-3 p-4 border cursor-pointer" style={{ borderColor: paymentMethod === 'cod' ? 'var(--brass)' : 'var(--hairline)' }}>
+              <input type="radio" name="payment-method" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
+              <span><strong className="block text-sm">Cash on delivery</strong><span className="label">Includes a ₹49 COD handling fee</span></span>
+            </label>
+          </fieldset>
+
           {error && (
             <div className="flex items-start gap-2 p-3 text-sm" style={{ color: 'var(--error)' }}>
               <AlertTriangle size={15} className="shrink-0 mt-0.5" />
@@ -400,7 +382,7 @@ export function CheckoutPage() {
             {step === 'processing' ? (
               <><Loader2 size={15} className="animate-spin" /> Processing</>
             ) : (
-              <span className="price">Pay {formatINR(total)}</span>
+              <span className="price">{paymentMethod === 'cod' ? 'Place COD order' : 'Pay'} {formatINR(total)}</span>
             )}
           </button>
 
@@ -442,9 +424,11 @@ export function CheckoutPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-between pt-4 mt-4 hairline-t">
-                <span className="label-ink">Total</span>
-                <span className="price font-display text-lg" style={{ fontWeight: 400 }}>{formatINR(total)}</span>
+              <div className="space-y-2 pt-4 mt-4 hairline-t">
+                <div className="flex justify-between"><span className="label">Subtotal</span><span className="price">{formatINR(subtotal)}</span></div>
+                <div className="flex justify-between"><span className="label">Standard shipping</span><span className="price">{shippingCost === 0 ? 'Free' : formatINR(shippingCost)}</span></div>
+                {codFee > 0 && <div className="flex justify-between"><span className="label">COD fee</span><span className="price">{formatINR(codFee)}</span></div>}
+                <div className="flex items-center justify-between pt-3 hairline-t"><span className="label-ink">Total</span><span className="price font-display text-lg" style={{ fontWeight: 400 }}>{formatINR(total)}</span></div>
               </div>
             </div>
           </div>

@@ -41,6 +41,33 @@ Deno.serve(async (req: Request) => {
     const lockIds = expiredLocks.map((l) => l.id);
     const itemIds = [...new Set(expiredLocks.map((l) => l.item_id))];
 
+    // Expired payment attempts must fail as one unit so their reserved items
+    // and stock state are released together.
+    const { data: pendingItems, error: pendingErr } = await supabase
+      .from('order_items')
+      .select('order_id, orders!inner(status)')
+      .in('item_id', itemIds)
+      .eq('orders.status', 'pending');
+    if (pendingErr) {
+      return new Response(JSON.stringify({ error: pendingErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const pendingOrderIds = [...new Set((pendingItems ?? []).map((row) => row.order_id))];
+    for (const orderId of pendingOrderIds) {
+      const { error: releaseError } = await supabase.rpc('release_checkout_order', {
+        p_order_id: orderId,
+        p_final_status: 'failed',
+      });
+      if (releaseError) {
+        return new Response(JSON.stringify({ error: releaseError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Set locks to expired (trigger will set items back to available)
     const { error: updateErr } = await supabase
       .from('cart_locks')
