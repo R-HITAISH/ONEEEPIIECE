@@ -186,8 +186,8 @@ export function CheckoutPage() {
         key: order.key_id,
         amount: order.total_inr * 100,
         currency: 'INR',
-        name: 'ONEEEPIIECE',
-        description: 'One-of-one clothing purchase',
+        name: 'ONEPIECE',
+        description: 'ONEPIECE purchase',
         order_id: order.razorpay_order_id,
         prefill: { name: form.name, contact: phone },
         handler: async (response: RazorpayCheckoutResponse) => {

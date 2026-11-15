@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
-const site = (process.env.VITE_SITE_URL || 'https://oneeepiiece.example').replace(/\/$/, '');
+const site = (process.env.VITE_SITE_URL || 'https://onepiece.example').replace(/\/$/, '');
 const paths = ['/', '/shop', '/about', '/contact', '/shipping', '/returns', '/privacy', '/terms'];
 const escapeXml = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const urls = new Set(paths.map((path) => `${site}${path}`));

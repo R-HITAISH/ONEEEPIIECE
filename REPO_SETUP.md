@@ -1,6 +1,6 @@
 # GitHub repository setup suggestion
 
-**Description:** A considered one-of-one clothing storefront for ONEEEPIIECE, built with React, TypeScript, Supabase, and Razorpay.
+**Description:** A considered unique clothing storefront for ONEPIECE, built with React, TypeScript, Supabase, and Razorpay.
 
 **Suggested topics:** `react`, `typescript`, `vite`, `supabase`, `razorpay`, `ecommerce`, `india`, `clothing`, `tailwindcss`
 

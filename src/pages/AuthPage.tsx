@@ -127,7 +127,7 @@ export function AuthPage() {
     setOtpError(null);
     setGoogleLoading(true);
     // Store return path in sessionStorage for OAuth redirect
-    sessionStorage.setItem('oneeepiiece_return_to', returnTo);
+    sessionStorage.setItem('onepiece_return_to', returnTo);
     const result = await signInWithGoogle();
     if (result.error) {
       setOtpError(result.error);

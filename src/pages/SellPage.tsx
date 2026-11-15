@@ -11,6 +11,7 @@ type FormState = {
   size: string;
   condition: string;
   asking_price_inr: string;
+  story: string;
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -26,6 +27,7 @@ export function SellPage() {
     size: '',
     condition: '',
     asking_price_inr: '',
+    story: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [photos, setPhotos] = useState<File[]>([]);
@@ -129,6 +131,7 @@ export function SellPage() {
         category: form.category,
         size: form.size,
         condition: form.condition,
+        story: form.story.trim() || null,
         asking_price_inr: parseInt(form.asking_price_inr, 10),
         photos: photoUrls,
       });
@@ -153,7 +156,7 @@ export function SellPage() {
         <button
           onClick={() => {
             setSuccess(false);
-            setForm({ submitter_name: '', submitter_email: '', submitter_phone: '', category: '', size: '', condition: '', asking_price_inr: '' });
+            setForm({ submitter_name: '', submitter_email: '', submitter_phone: '', category: '', size: '', condition: '', asking_price_inr: '', story: '' });
             setPhotos([]);
             setPhotoPreviews([]);
           }}
@@ -286,6 +289,12 @@ export function SellPage() {
             style={errors.asking_price_inr ? errStyle : undefined}
           />
           {errors.asking_price_inr && <p className="mt-1 text-sm" style={{ color: 'var(--error)' }}>{errors.asking_price_inr}</p>}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="label-field" htmlFor="sell-story">Tell us its story</label>
+          <textarea id="sell-story" maxLength={600} value={form.story} onChange={(e) => setField('story', e.target.value)} className="input" style={{ minHeight: '120px' }} placeholder="Where did you find it? What makes it worth passing on?" />
+          {form.story.length > 500 && <p className="label mt-2 text-right">{form.story.length}/600</p>}
         </div>
 
         {/* Photo upload */}

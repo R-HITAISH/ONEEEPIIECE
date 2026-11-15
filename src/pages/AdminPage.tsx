@@ -20,7 +20,7 @@ export function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [newItem, setNewItem] = useState({ name: '', category: 'shirts', size: 'M', condition: 'good condition', price: '', photo: '' });
+  const [newItem, setNewItem] = useState({ name: '', category: 'shirts', size: 'M', condition: 'good condition', price: '', photo: '', story: '' });
   const [coupon, setCoupon] = useState<CouponDraft>({ code: '', discount_type: 'percentage', discount_value: '', minimum_order_inr: '0' });
 
   useEffect(() => {
@@ -61,13 +61,14 @@ export function AdminPage() {
       name: newItem.name.trim(), category: newItem.category, size: newItem.size,
       condition: newItem.condition, price_inr: Number(newItem.price), photos: newItem.photo ? [newItem.photo] : [],
       status: 'available', stock: 1, view_count: 0, colour: 'As pictured', slug: `${slugBase}-${crypto.randomUUID().slice(0, 8)}`,
+      story: newItem.story.trim() || null,
     });
     if (result.error) setError('Product could not be created. Check all fields and try again.');
-    else { setMessage('Product created.'); setNewItem({ name: '', category: 'shirts', size: 'M', condition: 'good condition', price: '', photo: '' }); await loadAdminData(); }
+    else { setMessage('Product created.'); setNewItem({ name: '', category: 'shirts', size: 'M', condition: 'good condition', price: '', photo: '', story: '' }); await loadAdminData(); }
   };
 
   const updateProduct = async (item: Item) => {
-    const { error: updateError } = await supabase.from('items').update({ stock: item.stock, status: item.status, price_inr: item.price_inr }).eq('id', item.id);
+    const { error: updateError } = await supabase.from('items').update({ stock: item.stock, status: item.status, price_inr: item.price_inr, story: item.story?.trim() || null }).eq('id', item.id);
     if (updateError) setError(`Could not update ${item.name}.`);
     else setMessage(`${item.name} updated.`);
   };
@@ -98,7 +99,7 @@ export function AdminPage() {
   if (!user || !isAdmin) return <div className="page py-20 text-center"><h1 className="font-display" style={{ fontWeight: 400 }}>Store access only</h1><p className="label mt-3 mb-6">This account does not have administrator access.</p><Link className="btn btn-secondary" to="/">Return to the store</Link></div>;
 
   return <div className="page py-12 md:py-20 space-y-14">
-    <header><p className="label mb-2">ONEEEPIIECE</p><h1 className="font-display" style={{ fontWeight: 400 }}>Store administration</h1></header>
+    <header><p className="label mb-2">ONEPIECE</p><h1 className="font-display" style={{ fontWeight: 400 }}>Store administration</h1></header>
     {message && <p role="status" className="p-3" style={{ background: 'var(--sunken)' }}>{message}</p>}{error && <p role="alert" style={{ color: 'var(--error)' }}>{error}</p>}
     {loading ? <Loader2 className="animate-spin" aria-label="Loading store records" /> : <>
       <section><h2 className="font-display text-2xl mb-5" style={{ fontWeight: 400 }}>Products and stock</h2>
@@ -109,6 +110,7 @@ export function AdminPage() {
           <select className="input" aria-label="Condition" value={newItem.condition} onChange={(event) => setNewItem({ ...newItem, condition: event.target.value })}>{CONDITIONS.map((value) => <option key={value}>{value}</option>)}</select>
           <input className="input" required min="1" type="number" aria-label="Price in rupees" placeholder="Price ₹" value={newItem.price} onChange={(event) => setNewItem({ ...newItem, price: event.target.value })} />
           <input className="input" type="url" aria-label="Product image URL" placeholder="Image URL" value={newItem.photo} onChange={(event) => setNewItem({ ...newItem, photo: event.target.value })} />
+          <div className="sm:col-span-2 lg:col-span-3"><label className="label-field" htmlFor="new-item-story">Story</label><textarea id="new-item-story" maxLength={1200} className="input" style={{ minHeight: '100px' }} value={newItem.story} onChange={(event) => setNewItem({ ...newItem, story: event.target.value })} />{newItem.story.length > 1000 && <p className="label mt-1 text-right">{newItem.story.length}/1200</p>}</div>
           <button className="btn btn-primary sm:col-span-2 lg:col-span-3"><Plus size={15} /> Add product</button>
         </form>
         <div className="space-y-3">{items.map((item) => <div key={item.id} className="grid md:grid-cols-[1fr_110px_150px_130px_auto] gap-3 items-center border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
@@ -117,6 +119,7 @@ export function AdminPage() {
           <select className="input" aria-label={`${item.name} status`} value={item.status} onChange={(event) => setItems((current) => current.map((row) => row.id === item.id ? { ...row, status: event.target.value } : row))}><option value="available">Available</option><option value="locked">Reserved</option><option value="sold">Sold</option></select>
           <input type="number" min="0" className="input" aria-label={`${item.name} price`} value={item.price_inr} onChange={(event) => setItems((current) => current.map((row) => row.id === item.id ? { ...row, price_inr: Number(event.target.value) } : row))} />
           <button className="btn btn-secondary" onClick={() => void updateProduct(item)} aria-label={`Save ${item.name}`}><Save size={15} /></button>
+          <div className="md:col-span-5 w-full"><label className="label-field" htmlFor={`item-story-${item.id}`}>Story</label><textarea id={`item-story-${item.id}`} maxLength={1200} className="input" style={{ minHeight: '100px' }} value={item.story ?? ''} onChange={(event) => setItems((current) => current.map((row) => row.id === item.id ? { ...row, story: event.target.value } : row))} />{(item.story?.length ?? 0) > 1000 && <p className="label mt-1 text-right">{item.story?.length}/1200</p>}</div>
         </div>)}</div>
       </section>
       <section><h2 className="font-display text-2xl mb-5" style={{ fontWeight: 400 }}>Catalog variant stock</h2><div className="space-y-2">{variants.map((variant) => <div key={variant.id} className="grid sm:grid-cols-[1fr_120px_auto] gap-3 items-center border-b py-3" style={{ borderColor: 'var(--hairline)' }}>

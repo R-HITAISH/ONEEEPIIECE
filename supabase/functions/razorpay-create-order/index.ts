@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}` },
-      body: JSON.stringify({ amount: order.total_inr * 100, currency: 'INR', receipt: order.order_id, notes: { oneeepiiece_order_id: order.order_id } }),
+      body: JSON.stringify({ amount: order.total_inr * 100, currency: 'INR', receipt: order.order_id, notes: { onepiece_order_id: order.order_id } }),
     });
     const razorpayOrder = await razorpayResponse.json() as RazorpayOrderResponse;
     if (!razorpayResponse.ok || !razorpayOrder.id) {

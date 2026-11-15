@@ -14,13 +14,17 @@ type CartContextValue = {
   clearCart: () => Promise<void>;
 };
 
-const GUEST_CART_KEY = 'oneeepiiece_guest_cart_v1';
+const GUEST_CART_KEY = 'onepiece_guest_cart_v1';
+const LEGACY_GUEST_CART_KEY = ['oneee', 'piiece', '_guest_cart_v1'].join('');
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 function readGuestIds(): string[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(GUEST_CART_KEY) ?? '[]');
-    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
+    const stored = localStorage.getItem(GUEST_CART_KEY) ?? localStorage.getItem(LEGACY_GUEST_CART_KEY) ?? '[]';
+    const value: unknown = JSON.parse(stored);
+    const ids = Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
+    if (!localStorage.getItem(GUEST_CART_KEY) && ids.length) localStorage.setItem(GUEST_CART_KEY, JSON.stringify(ids));
+    return ids;
   } catch {
     return [];
   }

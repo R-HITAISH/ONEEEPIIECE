@@ -2,7 +2,7 @@ import { Link, useRouter } from '@/router/Router';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { ShoppingBag, User, Menu, X, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/Logo';
 import { supabase } from '@/lib/supabase';
 import { productPath } from '@/lib/utils';
@@ -19,6 +19,8 @@ export function Navbar({ onBagClick }: { onBagClick: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (itemCount > 0) {
@@ -46,11 +48,16 @@ export function Navbar({ onBagClick }: { onBagClick: () => void }) {
     return () => { active = false; window.clearTimeout(timer); };
   }, [searchText]);
 
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
+
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const term = searchText.trim();
     if (term) navigate(`/shop?q=${encodeURIComponent(term)}`);
     setSuggestions([]);
+    setSearchOpen(false);
     closeMobile();
   };
 
@@ -84,14 +91,14 @@ export function Navbar({ onBagClick }: { onBagClick: () => void }) {
               </nav>
             </div>
 
-            <form onSubmit={submitSearch} className="hidden sm:flex relative items-center" role="search">
-              <label className="sr-only" htmlFor="site-search">Search pieces</label>
-              <Search size={15} className="absolute left-3" aria-hidden="true" />
-              <input id="site-search" className="input pl-9 pr-3" style={{ width: 'clamp(145px, 18vw, 240px)', minHeight: 40 }} placeholder="Search pieces" value={searchText} onChange={(event) => setSearchText(event.target.value)} onFocus={() => setAccountOpen(false)} />
-              {suggestions.length > 0 && <div role="listbox" className="absolute top-full left-0 right-0 mt-2 bg-paper border shadow-lg p-1 z-50" style={{ borderColor: 'var(--hairline)' }}>
-                {suggestions.map((suggestion) => <Link key={suggestion.id} role="option" to={productPath(suggestion.name, suggestion.id)} onClick={() => { setSearchText(''); setSuggestions([]); }} className="block px-3 py-2 hover:bg-[color:var(--sunken)]"><span className="block text-sm truncate">{suggestion.name}</span><span className="label">{suggestion.category}</span></Link>)}
-              </div>}
-            </form>
+            <div className="relative hidden sm:block">
+              <button type="button" className="nav-link flex items-center justify-center min-w-11 min-h-11" aria-label="Search pieces" aria-expanded={searchOpen} onClick={() => { setSearchOpen((open) => !open); setAccountOpen(false); }}><Search size={18} /></button>
+              {searchOpen && <form onSubmit={submitSearch} className="absolute right-0 top-full mt-2 w-[min(90vw,320px)] bg-paper border p-3" role="search" style={{ borderColor: 'var(--hairline)' }}>
+                <label className="sr-only" htmlFor="site-search">Search pieces</label>
+                <input ref={searchInputRef} id="site-search" className="input" style={{ minHeight: 44 }} placeholder="Search pieces" value={searchText} onChange={(event) => setSearchText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { setSearchOpen(false); setSuggestions([]); } }} />
+                {suggestions.length > 0 && <div role="listbox" className="mt-2 border" style={{ borderColor: 'var(--hairline)' }}>{suggestions.map((suggestion) => <Link key={suggestion.id} role="option" to={productPath(suggestion.name, suggestion.id)} onClick={() => { setSearchText(''); setSuggestions([]); setSearchOpen(false); }} className="flex min-h-11 flex-col justify-center px-3 py-2 hover:bg-[color:var(--sunken)]"><span className="block text-sm truncate">{suggestion.name}</span><span className="label">{suggestion.category}</span></Link>)}</div>}
+              </form>}
+            </div>
 
             <div className="flex items-center gap-4 md:gap-5">
               <div className="relative">
@@ -99,10 +106,10 @@ export function Navbar({ onBagClick }: { onBagClick: () => void }) {
                   <User size={16} /><span className="hidden sm:inline">Account</span>
                 </button>
                 {accountOpen && <div role="menu" className="absolute right-0 top-full mt-3 min-w-48 bg-paper border shadow-lg p-2" style={{ borderColor: 'var(--hairline)' }}>
-                  <Link role="menuitem" onClick={() => setAccountOpen(false)} to={user ? '/account' : '/auth'} className="block px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">{user ? 'My account' : 'Sign in'}</Link>
+                  <Link role="menuitem" onClick={() => setAccountOpen(false)} to={user ? '/account' : '/auth'} className="flex min-h-11 items-center px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">{user ? 'My account' : 'Sign in'}</Link>
                   {user && <>
-                    <Link role="menuitem" onClick={() => setAccountOpen(false)} to="/account/orders" className="block px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">Orders</Link>
-                    <Link role="menuitem" onClick={() => setAccountOpen(false)} to="/wishlist" className="block px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">Wishlist</Link>
+                    <Link role="menuitem" onClick={() => setAccountOpen(false)} to="/account/orders" className="flex min-h-11 items-center px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">Orders</Link>
+                    <Link role="menuitem" onClick={() => setAccountOpen(false)} to="/wishlist" className="flex min-h-11 items-center px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">Wishlist</Link>
                     <button role="menuitem" type="button" onClick={() => { void signOut(); setAccountOpen(false); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-[color:var(--sunken)]">Sign out</button>
                   </>}
                 </div>}

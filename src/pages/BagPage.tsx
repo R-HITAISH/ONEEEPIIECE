@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Link, useRouter } from '@/router/Router';
 import { formatINR, formatTimeRemaining, productPath } from '@/lib/utils';
-import { Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
 
 export function BagPage() {
   const { cartItems, loading, removeFromCart } = useCart();
@@ -104,7 +104,6 @@ export function BagPage() {
                 className="btn btn-primary w-full"
               >
                 Checkout
-                <ArrowRight size={16} />
               </button>
               <p className="label mt-4 text-center">Payment secured by Razorpay.</p>
             </div>

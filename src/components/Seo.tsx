@@ -2,10 +2,10 @@ import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 const pageCopy: Record<string, { title: string; description: string }> = {
-  '/': { title: 'One-of-one clothing, found once | ONEEEPIIECE', description: 'Considered, one-of-one clothing. Found in India and chosen to be lived in again.' },
-  '/shop': { title: 'Shop one-of-one clothing | ONEEEPIIECE', description: 'Explore unique pre-loved clothing, carefully selected and never restocked.' },
-  '/about': { title: 'Our story | ONEEEPIIECE', description: 'Why we find and share one-of-one clothing from across India.' },
-  '/contact': { title: 'Contact us | ONEEEPIIECE', description: 'Questions about a piece or an order? Get in touch with ONEEEPIIECE.' },
+  '/': { title: 'Second-hand pieces with a story | ONEPIECE', description: 'Second-hand pieces, checked by hand and told honestly.' },
+  '/shop': { title: 'Shop second-hand pieces | ONEPIECE', description: 'Pre-loved pieces, checked by hand and never restocked.' },
+  '/about': { title: 'Our story | ONEPIECE', description: 'Why we find and share second-hand pieces from across India.' },
+  '/contact': { title: 'Contact us | ONEPIECE', description: 'Questions about a piece or an order? Get in touch with ONEPIECE.' },
 };
 
 export function Seo() {
@@ -13,8 +13,8 @@ export function Seo() {
   const segments = pathname.split('/').filter(Boolean);
   const lastSegment = segments[segments.length - 1];
   const page = pageCopy[pathname] ?? {
-    title: `${lastSegment?.replace(/-/g, ' ') ?? 'Shop'} | ONEEEPIIECE`,
-    description: 'One-of-one clothing, found once and chosen to be lived in again.',
+    title: `${lastSegment?.replace(/-/g, ' ') ?? 'Shop'} | ONEPIECE`,
+    description: 'Second-hand pieces, checked by hand and told honestly.',
   };
   const baseUrl = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') ?? window.location.origin;
   const canonical = `${baseUrl}${pathname}`;

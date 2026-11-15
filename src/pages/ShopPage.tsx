@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase, type Item, CATEGORIES, CONDITIONS, SIZES } from '@/lib/supabase';
 import { ItemCard } from '@/components/ItemCard';
 import { X } from 'lucide-react';
+import { generate300Items, getDevMode, singleItem, emptyItems, worstCaseItems } from '@/lib/devFixtures';
 
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'popular';
 const PAGE_SIZE = 12;
@@ -27,6 +28,7 @@ export function ShopPage({ initialCategory = null }: { initialCategory?: string 
   const sort: SortOption = rawSort === 'price-low' || rawSort === 'price-high' || rawSort === 'popular' ? rawSort : 'newest';
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1);
   const queryKey = searchParams.toString();
+  const devMode = getDevMode();
 
   const updateFilter = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -41,6 +43,24 @@ export function ShopPage({ initialCategory = null }: { initialCategory?: string 
     const loadItems = async () => {
       setLoading(true);
       setError(null);
+      if (devMode) {
+        let rows = devMode === '300' ? generate300Items() : devMode === 'one' ? singleItem : devMode === 'empty' ? emptyItems : worstCaseItems;
+        rows = rows.filter((item) => item.status === (showArchive ? 'sold' : 'available'));
+        if (category) rows = rows.filter((item) => item.category === category);
+        if (size) rows = rows.filter((item) => item.size === size);
+        if (condition) rows = rows.filter((item) => item.condition === condition);
+        if (colour) rows = rows.filter((item) => item.colour?.toLowerCase().includes(colour.toLowerCase()));
+        if (searchText) rows = rows.filter((item) => item.name.toLowerCase().includes(searchText.toLowerCase()));
+        if (minPrice) rows = rows.filter((item) => item.price_inr >= Number(minPrice));
+        if (maxPrice) rows = rows.filter((item) => item.price_inr <= Number(maxPrice));
+        if (sort === 'price-low') rows.sort((a, b) => a.price_inr - b.price_inr);
+        if (sort === 'price-high') rows.sort((a, b) => b.price_inr - a.price_inr);
+        const count = rows.length;
+        setTotalCount(count);
+        setItems(rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+        setLoading(false);
+        return;
+      }
       let query = supabase.from('items').select('*', { count: 'exact' });
       query = query.eq('status', showArchive ? 'sold' : 'available');
       if (category) query = query.eq('category', category);
@@ -66,7 +86,7 @@ export function ShopPage({ initialCategory = null }: { initialCategory?: string 
     };
     void loadItems();
     return () => { active = false; };
-  }, [category, size, condition, colour, minPrice, maxPrice, searchText, sort, page, showArchive, queryKey]);
+  }, [category, size, condition, colour, minPrice, maxPrice, searchText, sort, page, showArchive, queryKey, devMode]);
 
   const activeFilters = useMemo(
     () => [

@@ -7,7 +7,7 @@ export function getDevMode(): DevDataMode | null {
   const params = new URLSearchParams(window.location.search);
   const val = params.get('data');
   if (val === 'demo' || val === 'worst' || val === 'empty' || val === 'one' || val === '300') return val;
-  return 'demo';
+  return null;
 }
 
 const longName = 'Vintage 1990s Levi\u2019s 501 Denim Trucker Jacket, Faded Wash, Oversized Fit, Distressed Hem';
@@ -21,13 +21,14 @@ const longDesc = 'A truly exceptional piece of vintage Americana. This jacket ha
 
 const brokenImg = 'https://images.pexels.com/photos/nonexistent-broken-url.jpg';
 const realImg = 'https://images.pexels.com/photos/5675657/pexels-photo-5675657.jpeg?auto=compress&cs=tinysrgb&w=800';
+const longStory = `${'Found folded at the back of a neighborhood market stall, this denim jacket carries soft fading from years of wear.\nThe cuffs and seams show the places where it was most loved.\n\nIt was checked by hand, cleaned gently, and is ready to begin another chapter. '.repeat(6)}Carefully measured and photographed.`.slice(0, 1200).padEnd(1200, ' ');
 
 export const worstCaseItems: Item[] = [
-  { id: 'w1', name: longName, category: 'jackets', size: longSize, condition: 'good condition', price_inr: 149999, description: longDesc, photos: [realImg, brokenImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg], status: 'available', brand: longBrand, measurements: 'Pit to pit: 24in, Length: 28in, Shoulder: 19in, Sleeve: 25in', created_at: new Date().toISOString() },
+  { id: 'w1', name: longName, category: 'jackets', size: longSize, condition: 'good condition', price_inr: 149999, description: longDesc, story: longStory, photos: [realImg, brokenImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg, realImg], status: 'available', brand: longBrand, measurements: 'Pit to pit: 24in, Length: 28in, Shoulder: 19in, Sleeve: 25in', created_at: new Date().toISOString() },
   { id: 'w2', name: shortName, category: 'tshirts', size: 'S', condition: 'like new', price_inr: 800, description: 'Plain white tee.', photos: [realImg], status: 'available', brand: 'Uniqlo', measurements: 'Pit to pit: 18in', created_at: new Date().toISOString() },
-  { id: 'w3', name: nonLatinName, category: 'jackets', size: 'M', condition: 'well worn', price_inr: 3200, description: '\u0913\u0930\u093F\u091C\u093F\u0928\u0932 \u0921\u0947\u0928\u092E \u091C\u0948\u0915\u0947\u091F\u0964', photos: [realImg], status: 'available', brand: null, measurements: null, created_at: new Date().toISOString() },
+  { id: 'w3', name: nonLatinName, category: 'jackets', size: 'M', condition: 'well worn', price_inr: 3200, description: '\u0913\u0930\u093F\u091C\u093F\u0928\u0932 \u0921\u0947\u0928\u092E \u091C\u0948\u0915\u0947\u091F\u0964', story: 'यह जैकेट पुराने बाज़ार में मिली थी। इसकी मुलायम डेनिम और हल्के निशान इसे अपनी कहानी देते हैं। ✨🧵', photos: [realImg], status: 'available', brand: null, measurements: null, created_at: new Date().toISOString() },
   { id: 'w4', name: emojiName, category: 'tshirts', size: 'L', condition: 'good condition', price_inr: 1800, description: 'Black oversized tee.', photos: [], status: 'available', brand: 'Unknown', measurements: 'Pit to pit: 23in', created_at: new Date().toISOString() },
-  { id: 'w5', name: 'Sold Piece Example With A Reasonably Long Name', category: 'shirts', size: 'M', condition: 'good condition', price_inr: 2500, description: 'This one is sold.', photos: [realImg], status: 'sold', brand: 'Nike', measurements: 'Pit to pit: 22in', created_at: new Date().toISOString() },
+  { id: 'w5', name: 'Sold Piece Example With A Reasonably Long Name', category: 'shirts', size: 'M', condition: 'good condition', price_inr: 2500, description: 'This one is sold.', story: '<script>alert(1)</script>', photos: [realImg], status: 'sold', brand: 'Nike', measurements: 'Pit to pit: 22in', created_at: new Date().toISOString() },
   { id: 'w6', name: 'Reserved by another shopper', category: 'shoes', size: 'US 10', condition: 'like new', price_inr: 9500, description: 'Reserved item.', photos: [realImg], status: 'locked', brand: 'New Balance', measurements: 'US 10', created_at: new Date().toISOString() },
 ];
 

@@ -19,7 +19,7 @@ export function ContactPage() {
     setError(null);
     const { error: submitError } = await supabase.from('contact_messages').insert({ ...form, user_id: user?.id ?? null });
     setBusy(false);
-    if (submitError) setError('Your message could not be sent. Please try again or email support@oneeepiiece.in.');
+    if (submitError) setError('Your message could not be sent. Please try again or email support@onepiece.in.');
     else { setSent(true); setForm({ ...EMPTY_FORM, email: user?.email ?? '' }); }
   };
 

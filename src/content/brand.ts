@@ -1,7 +1,7 @@
 export const brand = {
-  name: 'ONEEEPIIECE',
+  name: 'ONEPIECE',
   tagline: 'Found once. Kept forever.',
-  description: 'Considered, one-of-one clothing. Found in India and chosen to be lived in again.',
+  description: 'Second-hand pieces, checked by hand and told honestly. Found in India.',
   location: 'Pune, India',
   whatsappNumber: '',
   instagramUrl: 'https://www.instagram.com/',
