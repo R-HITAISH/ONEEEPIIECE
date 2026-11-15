@@ -113,6 +113,9 @@ $$;
 drop trigger if exists on_auth_user_created_profile on auth.users;
 create trigger on_auth_user_created_profile after insert on auth.users
   for each row execute function public.handle_new_user_profile();
+insert into public.profiles(id,full_name,phone)
+select u.id,coalesce(u.raw_user_meta_data ->> 'full_name',''),u.phone
+from auth.users u on conflict (id) do nothing;
 
 alter table public.categories enable row level security;
 alter table public.products enable row level security;

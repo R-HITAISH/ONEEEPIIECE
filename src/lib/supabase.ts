@@ -27,6 +27,10 @@ export type Item = {
   status: string;
   brand: string | null;
   measurements: string | null;
+  slug?: string;
+  colour?: string;
+  stock?: number;
+  view_count?: number;
   created_at: string;
 };
 
@@ -48,6 +52,9 @@ export type Order = {
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
+  payment_method?: 'razorpay' | 'cod' | null;
+  tracking_number?: string | null;
+  shipping_cost_inr?: number;
   shipping_name: string | null;
   shipping_address: string | null;
   shipping_city: string | null;
@@ -56,6 +63,7 @@ export type Order = {
   shipping_phone: string | null;
   created_at: string;
   paid_at: string | null;
+  updated_at?: string;
 };
 
 export type OrderItem = {

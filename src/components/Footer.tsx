@@ -15,13 +15,16 @@ export function Footer() {
             <div>
               <p className="label mb-3">Shop</p>
               <Link to="/shop" className="text-link block mb-2">All pieces</Link>
-              <Link to="/sell" className="text-link block">Sell to us</Link>
+              <Link to="/sell" className="text-link block mb-2">Sell to us</Link>
+              <Link to="/wishlist" className="text-link block">Wishlist</Link>
             </div>
             <div>
               <p className="label mb-3">Legal</p>
               <Link to="/terms" className="text-link block mb-2">Terms</Link>
               <Link to="/privacy" className="text-link block mb-2">Privacy</Link>
-              <Link to="/refund-shipping" className="text-link block">Refunds &amp; shipping</Link>
+              <Link to="/shipping" className="text-link block mb-2">Shipping</Link>
+              <Link to="/returns" className="text-link block mb-2">Returns &amp; exchanges</Link>
+              <Link to="/contact" className="text-link block">Contact</Link>
             </div>
             <div>
               <p className="label mb-3">Connect</p>

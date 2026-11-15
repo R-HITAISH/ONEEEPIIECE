@@ -14,6 +14,8 @@ type AuthContextValue = {
   verifyOTP: (otp: string) => Promise<{ error: string | null }>;
   resetOTP: () => void;
   signInWithGoogle: () => Promise<{ error: string | null }>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUpWithEmail: (email: string, password: string) => Promise<{ error: string | null; confirmationRequired: boolean }>;
   signOut: () => Promise<void>;
 };
 
@@ -71,6 +73,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    return { error: error?.message ?? null };
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/account` },
+    });
+    return { error: error?.message ?? null, confirmationRequired: !error && !data.session };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     resetOTP();
@@ -89,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyOTP,
         resetOTP,
         signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
         signOut,
       }}
     >

@@ -19,6 +19,10 @@ import { TermsPage } from '@/pages/legal/TermsPage';
 import { PrivacyPage } from '@/pages/legal/PrivacyPage';
 import { RefundShippingPage } from '@/pages/legal/RefundShippingPage';
 import { SimplePage } from '@/pages/SimplePage';
+import { WishlistPage } from '@/pages/WishlistPage';
+import { OrderPage } from '@/pages/OrderPage';
+import { ContactPage } from '@/pages/ContactPage';
+import { AdminPage } from '@/pages/AdminPage';
 
 function ProductRoute() {
   const { slug = '' } = useParams();
@@ -47,21 +51,21 @@ function StoreRoutes() {
           <Route path="/cart" element={<BagPage />} />
           <Route path="/bag" element={<BagPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order/:id" element={<SimplePage title="Your order" description="Order details will appear here once order history is enabled." />} />
+          <Route path="/order/:id" element={<OrderPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/account/orders" element={<AccountPage />} />
-          <Route path="/wishlist" element={<SimplePage title="Your wishlist" description="Save the pieces you love and come back to them later." />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<SimplePage title="Contact us" description="Questions about an order or a piece? Email support@oneeepiiece.in and we’ll get back to you." />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/shipping" element={<RefundShippingPage />} />
           <Route path="/returns" element={<RefundShippingPage />} />
           <Route path="/refund-shipping" element={<RefundShippingPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/sell" element={<SellPage />} />
-          <Route path="/admin/*" element={<SimplePage title="Store administration" description="Sign in with an authorized store account to manage the storefront." />} />
+          <Route path="/admin/*" element={<AdminPage />} />
           <Route path="*" element={<SimplePage title="Page not found" description="We couldn’t find that page. Explore the latest one-of-one pieces instead." action={{ label: 'Shop all pieces', to: '/shop' }} />} />
         </Routes>
       </main>
