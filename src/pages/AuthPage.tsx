@@ -56,7 +56,7 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange: (v: 
 }
 
 export function AuthPage() {
-  const { otpSent, otpLoading, sendOTP, verifyOTP, resetOTP, signInWithGoogle } = useAuth();
+  const { otpSent, otpLoading, sendOTP, verifyOTP, resetOTP, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const { navigate } = useRouter();
   const [phoneInput, setPhoneInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
@@ -64,6 +64,13 @@ export function AuthPage() {
   const [otpError, setOtpError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(false);
+  const [authMode, setAuthMode] = useState<'phone' | 'email'>('phone');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailSignup, setEmailSignup] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
   const returnTo = (() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('returnTo') || '/account';
@@ -128,6 +135,21 @@ export function AuthPage() {
     }
   };
 
+  const handleEmailAuth = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setEmailError(null); setEmailNotice(null); setEmailLoading(true);
+    if (emailSignup) {
+      const result = await signUpWithEmail(email, password);
+      if (result.error) setEmailError(result.error);
+      else if (result.confirmationRequired) setEmailNotice('Check your inbox to confirm your email, then sign in.');
+      else navigate(returnTo);
+    } else {
+      const result = await signInWithEmail(email, password);
+      if (result.error) setEmailError(result.error);
+      else navigate(returnTo);
+    }
+    setEmailLoading(false);
+  };
+
   const formattedPhone = phoneInput
     ? `+91 ${phoneInput.replace(/\D/g, '').slice(-10).replace(/(\d{5})(\d{5})/, '$1 $2')}`
     : '';
@@ -140,7 +162,19 @@ export function AuthPage() {
           {otpSent ? `Code sent to ${formattedPhone}` : "We'll text you a six-digit code."}
         </p>
 
-        {!otpSent ? (
+        <div className="grid grid-cols-2 gap-2 mb-6" role="tablist" aria-label="Sign in method">
+          <button role="tab" aria-selected={authMode === 'phone'} className={`btn ${authMode === 'phone' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setAuthMode('phone')}>Phone</button>
+          <button role="tab" aria-selected={authMode === 'email'} className={`btn ${authMode === 'email' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setAuthMode('email')}>Email</button>
+        </div>
+
+        {authMode === 'email' ? <form onSubmit={(event) => void handleEmailAuth(event)} className="space-y-5">
+          <label className="label-field">Email<input className="input mt-2" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <label className="label-field">Password<input className="input mt-2" type="password" required minLength={emailSignup ? 8 : 1} autoComplete={emailSignup ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          {emailError && <p role="alert" className="text-sm" style={{ color: 'var(--error)' }}>{emailError}</p>}
+          {emailNotice && <p role="status" className="text-sm">{emailNotice}</p>}
+          <button className="btn btn-primary w-full" disabled={emailLoading}>{emailLoading ? <Loader2 size={15} className="animate-spin" /> : emailSignup ? 'Create account' : 'Sign in with email'}</button>
+          <button type="button" onClick={() => { setEmailSignup((current) => !current); setEmailError(null); setEmailNotice(null); }} className="text-link text-sm">{emailSignup ? 'Already have an account? Sign in' : 'New here? Create an account'}</button>
+        </form> : !otpSent ? (
           <form onSubmit={handleSendOTP} className="space-y-5">
             <div>
               <label className="label-field" htmlFor="auth-phone">Mobile number</label>

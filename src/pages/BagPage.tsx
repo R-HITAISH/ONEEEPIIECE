@@ -68,7 +68,9 @@ export function BagPage() {
                     </Link>
                     <p className="label mb-1">Size {ci.item.size} · {ci.item.condition}</p>
                     <p className="price text-sm font-medium text-ink mb-1">{formatINR(ci.item.price_inr)}</p>
-                    {!expired ? (
+                    {ci.guest ? (
+                      <p className="label" style={{ color: 'var(--brass-text)' }}>Saved in this browser · availability checked at checkout</p>
+                    ) : !expired ? (
                       <p className="label" style={{ color: 'var(--brass-text)' }}>
                         Held for {formatTimeRemaining(ci.lock.expires_at)}
                       </p>

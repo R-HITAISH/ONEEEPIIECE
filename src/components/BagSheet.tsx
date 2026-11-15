@@ -96,7 +96,9 @@ export function BagSheet({ open, onClose }: BagSheetProps) {
                   </Link>
                   <p className="label mb-1">Size {ci.item.size} · {ci.item.condition}</p>
                   <p className="price text-sm font-medium text-ink">{formatINR(ci.item.price_inr)}</p>
-                  {!expired ? (
+                  {ci.guest ? (
+                    <p className="label mt-1" style={{ color: 'var(--brass-text)' }}>Saved in this browser</p>
+                  ) : !expired ? (
                     <p className="label mt-1" style={{ color: 'var(--brass-text)' }}>
                       Held for {formatTimeRemaining(ci.lock.expires_at)}
                     </p>

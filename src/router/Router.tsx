@@ -44,15 +44,17 @@ export function Link({
   className,
   onClick,
   style,
+  role,
 }: {
   to: string;
   children: ReactNode;
   className?: string;
   onClick?: () => void;
   style?: CSSProperties;
+  role?: string;
 }) {
   return (
-    <RouterLink to={to} className={className} style={style} onClick={onClick}>
+    <RouterLink to={to} className={className} style={style} onClick={onClick} role={role}>
       {children}
     </RouterLink>
   );
