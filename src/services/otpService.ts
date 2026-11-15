@@ -28,7 +28,7 @@ export async function sendOTP(phoneNumber: string): Promise<{ error: string | nu
     if (error.message.includes('rate limit') || error.message.includes('too many')) {
       return { error: 'Too many attempts. Wait a minute before trying again.' };
     }
-    return { error: error.message };
+    return { error: 'Could not send a sign-in code. Please try again.' };
   }
 
   return { error: null };
@@ -51,7 +51,7 @@ export async function verifyOTP(phoneNumber: string, otp: string): Promise<{ err
     if (error.message.includes('expired') || error.message.includes('invalid')) {
       return { error: 'Invalid or expired code. Try again or resend.' };
     }
-    return { error: error.message };
+    return { error: 'Could not verify the sign-in code. Please try again.' };
   }
 
   return { error: null };

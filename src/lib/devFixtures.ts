@@ -1,14 +1,7 @@
 import type { Item, CartLock } from '@/lib/supabase';
+import type { DevDataMode } from '@/lib/devMode';
 
-export type DevDataMode = 'demo' | 'worst' | 'empty' | 'one' | '300';
-
-export function getDevMode(): DevDataMode | null {
-  if (!import.meta.env.DEV) return null;
-  const params = new URLSearchParams(window.location.search);
-  const val = params.get('data');
-  if (val === 'demo' || val === 'worst' || val === 'empty' || val === 'one' || val === '300') return val;
-  return null;
-}
+export type { DevDataMode };
 
 const longName = 'Vintage 1990s Levi\u2019s 501 Denim Trucker Jacket, Faded Wash, Oversized Fit, Distressed Hem';
 const shortName = 'Tee';

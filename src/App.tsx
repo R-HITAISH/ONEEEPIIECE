@@ -27,7 +27,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Seo } from '@/components/Seo';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { getDevMode } from '@/lib/devFixtures';
+import { getDevMode } from '@/lib/devMode';
 
 function ProductRoute() {
   const { slug = '' } = useParams();

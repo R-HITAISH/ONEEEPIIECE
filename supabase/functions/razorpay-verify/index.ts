@@ -1,14 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
 
 type VerifyRequest = { order_id: string; razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('SITE_URL') ?? '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-  'Content-Type': 'application/json',
-};
-const respond = (payload: Record<string, unknown>, status = 200) => new Response(JSON.stringify(payload), { status, headers: corsHeaders });
-
 function equalHex(left: string, right: string): boolean {
   if (!/^[a-f0-9]+$/i.test(left) || !/^[a-f0-9]+$/i.test(right) || left.length !== right.length) return false;
   let difference = 0;
@@ -17,7 +10,9 @@ function equalHex(left: string, right: string): boolean {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
+  const headers = corsHeaders(req);
+  const respond = (payload: Record<string, unknown>, status = 200) => new Response(JSON.stringify(payload), { status, headers });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (req.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
   const authorization = req.headers.get('Authorization');
   if (!authorization?.startsWith('Bearer ')) return respond({ error: 'Sign in to confirm this payment.' }, 401);
@@ -57,10 +52,10 @@ Deno.serve(async (req: Request) => {
       p_razorpay_payment_id: body.razorpay_payment_id,
       p_razorpay_signature: body.razorpay_signature,
     });
-    if (completeError || !completed) return respond({ error: completeError?.message ?? 'Could not complete the order.' }, 409);
+    if (completeError || !completed) return respond({ error: 'Could not complete the order.' }, 409);
     return respond({ verified: true, order_id: body.order_id, status: 'paid' });
-  } catch (error) {
-    console.error('razorpay-verify failed', error);
+  } catch {
+    console.error('razorpay-verify failed');
     return respond({ error: 'Payment verification failed.' }, 500);
   }
 });

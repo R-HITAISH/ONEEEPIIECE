@@ -2,6 +2,9 @@ import { useState, useRef, useCallback } from 'react';
 import { supabase, CATEGORIES, SIZES } from '@/lib/supabase';
 import { getSessionId } from '@/lib/utils';
 import { Check, Upload, X, Loader2 } from 'lucide-react';
+import { HoneypotField } from '@/components/HoneypotField';
+import { isSimpleBotSubmission } from '@/lib/honeypot';
+import { Link } from '@/router/Router';
 
 type FormState = {
   submitter_name: string;
@@ -16,7 +19,7 @@ type FormState = {
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
 
-const MAX_PHOTOS = 10;
+const MAX_PHOTOS = 8;
 
 export function SellPage() {
   const [form, setForm] = useState<FormState>({
@@ -37,6 +40,7 @@ export function SellPage() {
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const startedAt = useRef(Date.now());
 
   const handleFiles = useCallback((files: File[]) => {
     const remaining = MAX_PHOTOS - photos.length;
@@ -98,8 +102,9 @@ export function SellPage() {
     return fields.every((f) => !validateField(f, form[f]));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSimpleBotSubmission(e.currentTarget, startedAt.current)) { setSuccess(true); return; }
     if (!isFormValid()) {
       const fields: (keyof FormState)[] = ['submitter_name', 'submitter_email', 'submitter_phone', 'category', 'size', 'condition', 'asking_price_inr'];
       const newErrors: FormErrors = {};
@@ -119,7 +124,7 @@ export function SellPage() {
         const ext = file.name.split('.').pop();
         const path = `${sessionId}/${Date.now()}-${i}.${ext}`;
         const { error: uploadErr } = await supabase.storage.from('sell-submissions').upload(path, file);
-        if (uploadErr) throw new Error(`Photo upload failed: ${uploadErr.message}`);
+        if (uploadErr) throw new Error('Photo upload failed. Please try again.');
         const { data: urlData } = supabase.storage.from('sell-submissions').getPublicUrl(path);
         photoUrls.push(urlData.publicUrl);
       }
@@ -136,11 +141,11 @@ export function SellPage() {
         photos: photoUrls,
       });
 
-      if (insertErr) throw new Error(insertErr.message);
+      if (insertErr) throw new Error('Submission failed. Please try again.');
 
       setSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } catch {
+      setError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -159,6 +164,7 @@ export function SellPage() {
             setForm({ submitter_name: '', submitter_email: '', submitter_phone: '', category: '', size: '', condition: '', asking_price_inr: '', story: '' });
             setPhotos([]);
             setPhotoPreviews([]);
+            startedAt.current = Date.now();
           }}
           className="btn btn-secondary mt-6"
         >
@@ -180,12 +186,14 @@ export function SellPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6 max-w-[640px]">
+        <HoneypotField onFilled={() => setSuccess(true)} />
         <div>
           <label className="label-field" htmlFor="sell-name">Your name</label>
           <input
             id="sell-name"
             type="text"
             required
+            maxLength={120}
             value={form.submitter_name}
             onChange={(e) => setField('submitter_name', e.target.value)}
             onBlur={() => handleBlur('submitter_name')}
@@ -216,6 +224,7 @@ export function SellPage() {
             id="sell-phone"
             type="tel"
             required
+            maxLength={20}
             inputMode="numeric"
             value={form.submitter_phone}
             onChange={(e) => setField('submitter_phone', e.target.value)}
@@ -225,6 +234,7 @@ export function SellPage() {
           />
           {errors.submitter_phone && <p className="mt-1 text-sm" style={{ color: 'var(--error)' }}>{errors.submitter_phone}</p>}
         </div>
+        <p className="label md:col-span-2">By sending this, you agree to our <Link className="text-link" to="/privacy">Privacy Policy</Link>.</p>
 
         <div>
           <label className="label-field" htmlFor="sell-cat">Category</label>
@@ -265,6 +275,7 @@ export function SellPage() {
           <textarea
             id="sell-cond"
             required
+            maxLength={600}
             value={form.condition}
             onChange={(e) => setField('condition', e.target.value)}
             onBlur={() => handleBlur('condition')}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase, type Item } from '@/lib/supabase';
 import { Link, useRouter } from '@/router/Router';
 import { useCart } from '@/context/CartContext';
@@ -8,7 +8,9 @@ import { formatINR, productPath } from '@/lib/utils';
 import { ArrowLeft, ShoppingBag, AlertTriangle, ChevronDown, Heart, Share2, Ruler, X } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { HangTag } from '@/components/HangTag';
-import { getDevMode, worstCaseItems } from '@/lib/devFixtures';
+import { getDevMode } from '@/lib/devMode';
+import { HoneypotField } from '@/components/HoneypotField';
+import { isSimpleBotSubmission } from '@/lib/honeypot';
 
 export function ProductPage({ itemId }: { itemId: string }) {
   const { navigate } = useRouter();
@@ -29,15 +31,20 @@ export function ProductPage({ itemId }: { itemId: string }) {
   const [relatedItems, setRelatedItems] = useState<Item[]>([]);
   const [notifyEmail, setNotifyEmail] = useState(user?.email ?? '');
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
+  const notifyStartedAt = useRef(Date.now());
 
   useEffect(() => {
     setLoading(true);
     let active = true;
-    if (getDevMode()) {
-      const fixture = worstCaseItems.find((row) => row.id === itemId) ?? worstCaseItems[0];
-      setItem(fixture);
-      setRelatedItems(worstCaseItems.filter((row) => row.id !== fixture.id && row.status === 'available').slice(0, 4));
-      setLoading(false);
+    const devMode = getDevMode();
+    if (import.meta.env.DEV && devMode) {
+      void import('@/lib/devFixtures').then(({ worstCaseItems }) => {
+        if (!active) return;
+        const fixture = worstCaseItems.find((row) => row.id === itemId) ?? worstCaseItems[0];
+        setItem(fixture);
+        setRelatedItems(worstCaseItems.filter((row) => row.id !== fixture.id && row.status === 'available').slice(0, 4));
+        setLoading(false);
+      });
       return () => { active = false; };
     }
     supabase
@@ -71,9 +78,12 @@ export function ProductPage({ itemId }: { itemId: string }) {
 
   useEffect(() => {
     if (!item) return;
-    if (getDevMode()) {
-      setRelatedItems(worstCaseItems.filter((row) => row.id !== item.id && row.status === 'available').slice(0, 4));
-      return;
+    if (import.meta.env.DEV && getDevMode()) {
+      let active = true;
+      void import('@/lib/devFixtures').then(({ worstCaseItems }) => {
+        if (active) setRelatedItems(worstCaseItems.filter((row) => row.id !== item.id && row.status === 'available').slice(0, 4));
+      });
+      return () => { active = false; };
     }
     let active = true;
     supabase.from('items').select('*').eq('category', item.category).eq('status', 'available').neq('id', item.id)
@@ -83,7 +93,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
   }, [item]);
 
   useEffect(() => {
-    if (!item || getDevMode()) return;
+    if (!item || (import.meta.env.DEV && getDevMode())) return;
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('items')
@@ -141,6 +151,10 @@ export function ProductPage({ itemId }: { itemId: string }) {
 
   const notifyWhenAvailable = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSimpleBotSubmission(event.currentTarget as HTMLFormElement, notifyStartedAt.current)) {
+      setNotifyMessage('We’ll email you if this piece becomes available.');
+      return;
+    }
     if (!item || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notifyEmail)) {
       setNotifyMessage('Enter a valid email address.');
       return;
@@ -315,6 +329,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
                 <p className="font-display text-2xl" style={{ fontWeight: 400, color: 'var(--ink-2)' }}>Sold</p>
                 <Link to="/shop" className="text-link">See similar pieces</Link>
                 <form onSubmit={notifyWhenAvailable} className="max-w-md space-y-3 pt-3">
+                  <HoneypotField onFilled={() => setNotifyMessage('We’ll email you if this piece becomes available.')} />
                   <label htmlFor="stock-notify-email" className="label-field">Get an email if this piece becomes available</label>
                   <div className="flex gap-2"><input id="stock-notify-email" type="email" required value={notifyEmail} onChange={(event) => setNotifyEmail(event.target.value)} className="input" placeholder="Email address" /><button className="btn btn-primary shrink-0" type="submit">Notify me</button></div>
                   {notifyMessage && <p className="label" role="status">{notifyMessage}</p>}

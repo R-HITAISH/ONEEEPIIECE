@@ -409,6 +409,7 @@ export function CheckoutPage() {
               <span className="price">{paymentMethod === 'cod' ? 'Place COD order' : 'Pay'} {formatINR(total)}</span>
             )}
           </button>
+          <p className="label">By sending this, you agree to our <Link className="text-link" to="/privacy">Privacy Policy</Link>.</p>
 
           {validItems.length === 0 && (
             <p className="text-sm text-center" style={{ color: 'var(--error)' }}>

@@ -5,7 +5,7 @@ import { ItemCard } from '@/components/ItemCard';
 import { HangTag } from '@/components/HangTag';
 import { brand } from '@/content/brand';
 import { Helmet } from 'react-helmet-async';
-import { getDevMode, worstCaseItems, generate300Items } from '@/lib/devFixtures';
+import { getDevMode } from '@/lib/devMode';
 import { productPath } from '@/lib/utils';
 
 export function HomePage() {
@@ -14,11 +14,15 @@ export function HomePage() {
   const devMode = getDevMode();
 
   useEffect(() => {
-    if (devMode) {
-      const rows = devMode === '300' ? generate300Items() : devMode === 'one' ? worstCaseItems.slice(0, 1) : devMode === 'empty' ? [] : worstCaseItems.filter((item) => item.status === 'available');
-      setFeatured(rows.slice(0, 4));
-      setLoading(false);
-      return;
+    if (import.meta.env.DEV && devMode) {
+      let active = true;
+      void import('@/lib/devFixtures').then(({ generate300Items, worstCaseItems }) => {
+        if (!active) return;
+        const rows = devMode === '300' ? generate300Items() : devMode === 'one' ? worstCaseItems.slice(0, 1) : devMode === 'empty' ? [] : worstCaseItems.filter((item) => item.status === 'available');
+        setFeatured(rows.slice(0, 4));
+        setLoading(false);
+      });
+      return () => { active = false; };
     }
     let active = true;
     supabase.from('items').select('*').eq('status', 'available').order('created_at', { ascending: false }).limit(12)
@@ -42,7 +46,7 @@ export function HomePage() {
       </div>
       <div className="home-hero-visual">
         <div className="home-hero-image product-media">
-          {heroPhoto ? <img src={heroPhoto} alt={`${heroItem?.name ?? 'Second-hand piece'}${heroItem ? `, size ${heroItem.size}, ${heroItem.condition}` : ''}`} fetchPriority="high" /> : <div className="hero-empty" aria-label="A quiet space for the next piece" />}
+          {heroPhoto ? <img src={heroPhoto} alt={`${heroItem?.name ?? 'Second-hand piece'}${heroItem ? `, size ${heroItem.size}, ${heroItem.condition}` : ''}`} fetchPriority="high" /> : <div className="hero-empty" role="img" aria-label="A quiet space for the next piece" />}
         </div>
         {heroItem && <HangTag item={heroItem} animated />}
         <span className="hero-image-caption">{heroItem?.name ?? 'A story waiting to be found'}</span>

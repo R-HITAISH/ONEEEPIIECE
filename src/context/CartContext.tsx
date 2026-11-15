@@ -121,7 +121,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         locked_at: new Date().toISOString(),
         expires_at: expiresAt,
       });
-      if (error) return { success: false, error: error.code === '23505' ? 'This piece is already reserved by another shopper' : error.message };
+      if (error) return { success: false, error: error.code === '23505' ? 'This piece is already reserved by another shopper' : 'This piece could not be reserved. Please try again.' };
       await refreshCart();
       return { success: true, error: null };
     }
