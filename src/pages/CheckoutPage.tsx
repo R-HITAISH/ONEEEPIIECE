@@ -45,7 +45,9 @@ type CheckoutOrderResponse = {
   shipping_cost_inr: number;
   cod_fee_inr: number;
   status: string;
+  discount_inr?: number;
 };
+type AppliedCoupon = { code: string; discount_inr: number };
 
 type FormState = {
   name: string;
@@ -78,11 +80,16 @@ export function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const subtotal = cartItems.reduce((sum, ci) => sum + ci.item.price_inr, 0);
-  const shippingCost = subtotal >= 1999 ? 0 : 99;
+  const discountedSubtotal = Math.max(0, subtotal - (appliedCoupon?.discount_inr ?? 0));
+  const shippingCost = discountedSubtotal >= 1999 ? 0 : 99;
   const codFee = paymentMethod === 'cod' ? 49 : 0;
-  const total = subtotal + shippingCost + codFee;
+  const total = discountedSubtotal + shippingCost + codFee;
   const validItems = cartItems.filter((ci) => new Date(ci.lock.expires_at) > new Date());
 
   useEffect(() => {
@@ -112,6 +119,21 @@ export function CheckoutPage() {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
+  const applyCoupon = async () => {
+    if (!user || !couponCode.trim()) return;
+    setCouponBusy(true); setCouponError(null); setAppliedCoupon(null);
+    const { data, error: validationError } = await supabase.functions.invoke('validate-coupon', {
+      body: { code: couponCode.trim(), item_ids: validItems.map((cartItem) => cartItem.item.id) },
+    });
+    setCouponBusy(false);
+    if (validationError || !data || typeof data.discount_inr !== 'number' || typeof data.code !== 'string') {
+      setCouponError(data?.error ?? validationError?.message ?? 'That code could not be applied.');
+      return;
+    }
+    setAppliedCoupon({ code: data.code, discount_inr: data.discount_inr });
+    setCouponCode(data.code);
+  };
+
   const isFormValid = () => {
     const fields: (keyof FormState)[] = ['name', 'phone', 'address', 'city', 'state', 'pincode'];
     return fields.every((f) => !validateField(f, form[f]));
@@ -139,7 +161,7 @@ export function CheckoutPage() {
       const { data: orderData, error: createError } = await supabase.functions.invoke('razorpay-create-order', {
         body: {
           item_ids: validItems.map((cartItem) => cartItem.item.id),
-          shipping: { name: form.name, phone, address: form.address, extra: form.flat, city: form.city, state: form.state, pincode: form.pincode },
+          shipping: { name: form.name, phone, address: form.address, extra: form.flat, city: form.city, state: form.state, pincode: form.pincode, coupon_code: appliedCoupon?.code ?? '' },
           payment_method: paymentMethod,
         },
       });
@@ -149,6 +171,7 @@ export function CheckoutPage() {
 
       if (paymentMethod === 'cod') {
         await clearCart();
+        void supabase.functions.invoke('send-order-email', { body: { order_id: order.order_id } });
         setStep('success');
         navigate(`/order/${order.order_id}`);
         return;
@@ -178,6 +201,7 @@ export function CheckoutPage() {
             return;
           }
           await clearCart();
+          void supabase.functions.invoke('send-order-email', { body: { order_id: order.order_id } });
           setStep('success');
           navigate(`/order/${order.order_id}`);
         },
@@ -424,8 +448,15 @@ export function CheckoutPage() {
                   </div>
                 ))}
               </div>
+              <div className="mt-5">
+                <label className="label-field" htmlFor="checkout-coupon">Coupon code</label>
+                <div className="flex gap-2 mt-2"><input id="checkout-coupon" className="input" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setAppliedCoupon(null); setCouponError(null); }} placeholder="Enter code" autoComplete="off" /><button type="button" onClick={() => void applyCoupon()} disabled={couponBusy || !couponCode.trim()} className="btn btn-secondary min-h-11 px-4">{couponBusy ? 'Checking…' : appliedCoupon ? 'Applied' : 'Apply'}</button></div>
+                {appliedCoupon && <p className="label mt-2" role="status">{appliedCoupon.code} applied · save {formatINR(appliedCoupon.discount_inr)}</p>}
+                {couponError && <p className="text-sm mt-2" style={{ color: 'var(--error)' }} role="alert">{couponError}</p>}
+              </div>
               <div className="space-y-2 pt-4 mt-4 hairline-t">
                 <div className="flex justify-between"><span className="label">Subtotal</span><span className="price">{formatINR(subtotal)}</span></div>
+                {appliedCoupon && <div className="flex justify-between"><span className="label">Coupon · {appliedCoupon.code}</span><span className="price">−{formatINR(appliedCoupon.discount_inr)}</span></div>}
                 <div className="flex justify-between"><span className="label">Standard shipping</span><span className="price">{shippingCost === 0 ? 'Free' : formatINR(shippingCost)}</span></div>
                 {codFee > 0 && <div className="flex justify-between"><span className="label">COD fee</span><span className="price">{formatINR(codFee)}</span></div>}
                 <div className="flex items-center justify-between pt-3 hairline-t"><span className="label-ink">Total</span><span className="price font-display text-lg" style={{ fontWeight: 400 }}>{formatINR(total)}</span></div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Item } from '@/lib/supabase';
-import { formatINR, productPath } from '@/lib/utils';
+import { formatINR, productPath, responsiveImageUrl } from '@/lib/utils';
 import { Link } from '@/router/Router';
 
 export function ItemCard({ item }: { item: Item; index?: number }) {
@@ -20,7 +20,9 @@ export function ItemCard({ item }: { item: Item; index?: number }) {
       <div className="product-media aspect-[4/5] relative">
         <img
           ref={imgRef}
-          src={item.photos[0] ?? ''}
+          src={item.photos[0] ? responsiveImageUrl(item.photos[0], 640) : ''}
+          srcSet={item.photos[0] ? `${responsiveImageUrl(item.photos[0], 360)} 360w, ${responsiveImageUrl(item.photos[0], 640)} 640w, ${responsiveImageUrl(item.photos[0], 960)} 960w` : undefined}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           alt={altText}
           className={`product-img w-full h-full object-cover ${loaded ? 'is-loaded' : ''} ${sold ? 'grayscale opacity-60' : ''}`}
           loading="lazy"

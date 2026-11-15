@@ -11,6 +11,20 @@ export function formatINR(amount: number): string {
   return '₹' + amount.toLocaleString('en-IN');
 }
 
+export function responsiveImageUrl(source: string, width: number): string {
+  try {
+    const url = new URL(source);
+    if (!url.pathname.includes('/storage/v1/object/public/')) return source;
+    url.pathname = url.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    url.searchParams.set('width', String(width));
+    url.searchParams.set('quality', '80');
+    url.searchParams.set('format', 'webp');
+    return url.toString();
+  } catch {
+    return source;
+  }
+}
+
 export function productPath(name: string, id: string): string {
   const slug = name
     .normalize('NFKD')

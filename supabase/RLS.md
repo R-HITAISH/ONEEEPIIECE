@@ -1,6 +1,6 @@
 # Row Level Security policy map
 
-The policies below are installed by `migrations/20261115090000_store_foundation.sql`.
+The baseline policies below are installed by `migrations/20261115090000_store_foundation.sql`; later migrations add protection for new tables and columns.
 Service-role access is reserved for Edge Functions and is not exposed to the browser.
 The previous schema's broad client policies are dropped by that migration.
 
@@ -17,6 +17,7 @@ The previous schema's broad client policies are dropped by that migration.
 | `coupons` | No direct public/client access | Admin and trusted Edge Functions |
 | `stock_notifications` | Anonymous/authenticated may submit an email request; authenticated user may read own request | Admin can read and update notification state |
 | `contact_messages` | Anyone may submit a validated message; no client reads | Admin can read |
+| `order_email_events` | No client access; RLS is enabled without anon/authenticated policies | Service role only, through the mail Edge Function |
 | `items` | Anyone can read listings | Admin can manage listings |
 | `cart_locks` | Authenticated owner only; anonymous clients cannot read/write lock rows | Admin can read; application mutations should move to trusted functions |
 | `orders` | Authenticated owner can read own orders | Admin can update; creation/status/payment changes must use trusted functions |

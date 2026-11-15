@@ -81,7 +81,10 @@ export function AdminPage() {
   const updateOrder = async (order: AdminOrder, status: string, trackingNumber: string) => {
     const { error: updateError } = await supabase.from('orders').update({ status, tracking_number: trackingNumber || null, updated_at: new Date().toISOString() }).eq('id', order.id);
     if (updateError) setError(`Could not update order ${order.id.slice(0, 8)}.`);
-    else { setMessage('Order updated.'); await loadAdminData(); }
+    else {
+      if (status === 'shipped' || status === 'cancelled') void supabase.functions.invoke('send-order-email', { body: { order_id: order.id } });
+      setMessage('Order updated.'); await loadAdminData();
+    }
   };
 
   const createCoupon = async (event: React.FormEvent) => {

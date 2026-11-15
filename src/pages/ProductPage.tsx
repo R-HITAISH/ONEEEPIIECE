@@ -4,8 +4,9 @@ import { Link, useRouter } from '@/router/Router';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { ItemCard } from '@/components/ItemCard';
-import { formatINR } from '@/lib/utils';
+import { formatINR, productPath } from '@/lib/utils';
 import { ArrowLeft, ShoppingBag, AlertTriangle, ChevronDown, Heart, Share2, Ruler, X } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export function ProductPage({ itemId }: { itemId: string }) {
   const { navigate } = useRouter();
@@ -169,9 +170,28 @@ export function ProductPage({ itemId }: { itemId: string }) {
   const sold = item.status === 'sold' || item.stock === 0;
   const locked = item.status === 'locked';
   const availableStock = item.stock ?? (sold ? 0 : 1);
+  const canonicalUrl = `${(import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') ?? window.location.origin}${productPath(item.name, item.id)}`;
+  const productSchema = {
+    '@context': 'https://schema.org', '@type': 'Product', name: item.name,
+    description: item.description ?? `${item.condition} ${item.category} from ONEEEPIIECE`, image: item.photos,
+    brand: { '@type': 'Brand', name: item.brand ?? 'ONEEEPIIECE' }, sku: item.id,
+    itemCondition: 'https://schema.org/UsedCondition', url: canonicalUrl,
+    offers: { '@type': 'Offer', priceCurrency: 'INR', price: item.price_inr, availability: sold ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: canonicalUrl },
+  };
 
   return (
     <div className="page" style={{ paddingTop: '1.5rem', paddingBottom: '4rem' }}>
+      <Helmet>
+        <title>{item.name} | ONEEEPIIECE</title>
+        <meta name="description" content={`${item.condition} ${item.category}. One of one, found once and never restocked.`} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="product" /><meta property="og:title" content={`${item.name} | ONEEEPIIECE`} />
+        <meta property="og:description" content={item.description ?? `${item.condition} ${item.category} — one of one.`} />
+        {item.photos[0] && <meta property="og:image" content={item.photos[0]} />}
+        <meta property="product:price:amount" content={String(item.price_inr)} /><meta property="product:price:currency" content="INR" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
+      </Helmet>
       <Link to="/shop" className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: 'var(--ink-2)' }}>
         <ArrowLeft size={15} />
         Back to shop
@@ -187,6 +207,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
                 src={item.photos[activePhoto] ?? item.photos[0] ?? ''}
                 alt={item.name}
                 className={`w-full h-full object-cover ${sold ? 'grayscale opacity-60' : ''}`}
+                fetchPriority="high"
               />
             </button>
             {item.photos.length > 1 && (
@@ -365,6 +386,10 @@ export function ProductPage({ itemId }: { itemId: string }) {
           <p className="text-sm mt-4" style={{ color: 'var(--ink-2)' }}>Vintage sizing varies by brand and era. Use the exact garment measurements listed on this page and compare them with a similar piece you own. Contact us if you would like help with fit.</p>
           <button className="btn btn-primary mt-6" onClick={() => setChartOpen(false)}>Got it</button>
         </section>
+      </div>}
+      {!sold && !locked && <div className="md:hidden fixed z-40 bottom-0 inset-x-0 border-t bg-paper/95 backdrop-blur-sm px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-4" style={{ borderColor: 'var(--hairline)' }}>
+        <div className="min-w-0"><p className="label truncate">One of one</p><p className="price">{formatINR(item.price_inr)}</p></div>
+        <button onClick={inBag ? () => navigate('/checkout') : handleAddToCart} disabled={adding} className="btn btn-primary flex-1 min-h-11">{inBag ? 'Go to checkout' : adding ? 'Reserving…' : 'Add to bag'}</button>
       </div>}
     </div>
   );
