@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Keep module imports safe in an unconfigured preview. App renders a setup screen
+// until the real public project values are supplied.
+export const supabase = createClient(supabaseUrl || 'https://setup-required.supabase.co', supabaseAnonKey || 'setup-required-anon-key', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

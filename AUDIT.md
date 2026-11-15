@@ -1,49 +1,26 @@
-# Onepeice storefront audit
+# ONEEEPIIECE storefront audit
 
-Audit date: 2026-11-15
+Audit updated: 2026-11-15. This is a source and migration review. The Supabase project, deployed database, Edge Function secrets, OAuth providers, Razorpay, Resend, and production hosting were not accessible for live verification.
 
-This is a code and migration audit of the checked-out repository. Supabase project settings, deployed database state, secrets, live payment credentials, and production behavior were not independently verified.
+| # | Area | Current implementation | Remaining gap |
+|---|---|---|---|
+| 1 | Listing and discovery | `src/pages/ShopPage.tsx` supports category, size, condition, colour and price filters, query-string state, sorting and pagination with loading/error/empty states. | Catalog/mobile filter behavior needs authenticated-data QA; no bottom-sheet filter UI yet. |
+| 2 | Product detail | `src/pages/ProductPage.tsx` has gallery/zoom, availability, fit guidance, wishlist/share, related pieces and back-in-stock form. | Legacy one-off items have no selectable color/size variants or category-specific measurement charts. |
+| 3 | Bag and checkout | `src/context/CartContext.tsx`, `src/components/BagSheet.tsx`, `src/pages/CheckoutPage.tsx` cover guest local storage, merge, drawer, validated delivery fields, coupon preview, shipping/COD totals. | Checkout requires sign-in; no shipping-service selection or live end-to-end confirmation was run. |
+| 4 | Auth and account | `src/context/AuthContext.tsx`, `src/pages/AuthPage.tsx`, `src/pages/AccountPage.tsx` have email/password, Google, phone OTP, profile, addresses and orders. | Google/OTP/email confirmation depend on Supabase provider setup; not live-tested. |
+| 5 | Order management | `src/pages/OrderPage.tsx` has an owner-protected order timeline; `src/pages/AdminPage.tsx` edits catalog, stock, coupons and order status/tracking. | Admin UI and notification transitions require staging role/data checks; normalized and legacy catalogs coexist. |
+| 6 | Database and authorization | New migrations create customer/catalog/engagement tables, sample products and owner/admin RLS. `supabase/RLS.md` documents manual access checks. | Migrations are not confirmed applied; RLS checklist and cross-user isolation have not been exercised against Supabase. |
+| 7 | Policies and support | Legal pages under `src/pages/legal/`, `src/pages/ContactPage.tsx`, footer links, and contact-message persistence exist. | Business policy promises and support inbox need owner review/configuration before launch. |
+| 8 | Payment lifecycle | `supabase/functions/razorpay-create-order/`, `razorpay-verify/`, `razorpay-cancel-order/`, `razorpay-webhook/`, migration `20261115093000_secure_checkout.sql` support trusted totals, stock transitions, COD and recovery. | Requires applying migrations, deploying functions/secrets, configuring webhook, and Razorpay test-mode checkout. |
+| 9 | Search and wishlist | `src/components/Navbar.tsx`, `src/pages/ShopPage.tsx`, `src/pages/WishlistPage.tsx` provide suggestions, results and account wishlist. | Suggestions do not yet include category records; requires live catalog QA. |
+| 10 | Coupons and free shipping | `src/pages/CheckoutPage.tsx`, `supabase/functions/validate-coupon/`, migration `20261115100000_checkout_coupons.sql` validate coupon and apply minimum/expiry/usage/discount on the server; free shipping threshold is ₹1,999 after discount. | No global threshold banner; coupon concurrency and payment retries need staging validation. |
+| 11 | Transactional email | `supabase/functions/send-order-email/`, migration `20261115101000_order_email_events.sql`, checkout/admin calls send idempotent confirmation/shipped/cancelled templates through Resend. | Requires Resend API key, verified sender and deployed function; delivery and retry behavior not live-tested. |
+| 12 | Mobile pass | Responsive Tailwind layouts and `src/pages/ProductPage.tsx` sticky purchase bar; responsive QA checked the unconfigured preview at 360/768/1280. | Store pages with real data were not visually checked; bottom-sheet filters and broader touch-target audit remain. |
+| 13 | Image delivery | `src/lib/utils.ts` maps public Supabase Storage images to WebP width transforms; item cards use srcset, lazy loading and fixed ratios; hero is high priority. | External/Pexels images cannot use Supabase transforms; no verified blur-up asset variants. |
+| 14 | Reviews and engagement | Contact, back-in-stock, Instagram link, optional configured WhatsApp CTA; normalized reviews table has delivered-order RLS and admin moderation policy. | Review submission, photos, ratings/averages and moderation UI are not implemented. WhatsApp number is intentionally blank until configured. |
+| 15 | Brand content | `src/content/brand.ts`, `src/pages/HomePage.tsx`, `src/pages/AboutPage.tsx` use ONEEEPIIECE copy, featured categories and a restrained trust strip. | About copy remains separately authored; verify final brand story and photo licensing with owner. |
+| 16 | Empty/error states | Listing, product, bag, wishlist, orders and 404 surfaces provide empty/error/loading feedback. | A complete screen-by-screen retry and assistive-technology audit remains. |
+| 17 | SEO and sharing | `react-helmet-async`, `src/components/Seo.tsx`, product-specific canonical/OG/price metadata and Product JSON-LD, `scripts/generate-sitemap.mjs`, `robots.txt` output and semantic UI are present. | Lighthouse 90+ audit is not complete; set the real domain and Supabase env at build time. |
+| 18 | Repository quality | `.env.example`, README, `REPO_SETUP.md`, `LICENSE`, GitHub Actions, migration/RLS docs, sitemap generator and CI checks are present. | GitHub description/topics are suggestions only; no screenshot asset; dependency audit reports 22 npm advisories; verify CI on GitHub. |
 
-## Foundation inventory
-
-| Area | Exists | Partial | Missing / risk |
-| --- | --- | --- | --- |
-| App shell and navigation | `src/App.tsx`, `src/components/Navbar.tsx`, `src/components/Footer.tsx`, `src/components/BagSheet.tsx`, `src/router/Router.tsx` | Shared shell, browser-history routing via `react-router-dom`, category and product routes, account menu, mobile nav, bag drawer, footer and 404 exist | Some routes currently lead to implementation placeholders; hosting fallback for direct client routes still needs deployment configuration. |
-| Data access | `src/lib/supabase.ts` | Supabase client and types for items, cart locks, orders, order items, and sell submissions | Required product/catalog/account domain tables are absent; no `.env.example`; client throws on missing public env at import time. |
-| Auth | `src/context/AuthContext.tsx`, `src/pages/AuthPage.tsx`, `src/pages/AccountPage.tsx`, `src/services/otpService.ts` | Supabase session, Google OAuth, phone OTP, email/password signup/sign-in, protected account access, editable profile, saved addresses, and guest-cart merge exist | Auth provider configuration and confirmation emails still require live Supabase settings; guest cart is stored locally and validated at checkout. |
-| Existing database | `supabase/migrations/20260906182230_create_onepiece_schema.sql`, `supabase/migrations/20260906182704_fix_trigger_security.sql` | Items, cart locks, orders, order items, sell submissions, storage bucket, seed of 8 items, and one trigger hardening migration | Seeds do not meet the requested count; several policies permit broad anonymous/authenticated writes or reads; required categories, variants, images, profiles, addresses, carts, wishlist, reviews, coupons, and notifications tables are absent. |
-| Existing checkout | `src/pages/CheckoutPage.tsx`, `supabase/functions/razorpay-create-order/`, `supabase/functions/razorpay-verify/`, `src/pages/OrderPage.tsx` | Address validation, Razorpay Checkout UI, signature verification, guest cart and order detail/timeline surfaces exist | Server trusts caller amount and pre-created order/items; verification does not bind expected order/payment identifiers to stored order state or perform stock/order transitions atomically; no webhook, COD, or robust failure/abandonment handling yet. |
-
-## Requested feature audit
-
-Statuses describe the repository as inspected; **PARTIAL** means some implementation exists but acceptance requirements are not met.
-
-| # | Requested point | Status | Evidence and gaps |
-| --- | --- | --- | --- |
-| 1 | Product listing: filters, sorting, URL state, pagination | PARTIAL | `src/pages/ShopPage.tsx` now supports category, size, condition, colour, price range, newest/price/popular sorting, query-string state, pagination, skeletons, and fetch errors. Popularity depends on meaningful `view_count` data and the filter layout still needs small-screen QA. |
-| 2 | Product detail: gallery, zoom, selectors, stock, size chart, wishlist/share/related | PARTIAL | `src/pages/ProductPage.tsx` has photo gallery/zoom, stock messaging, fit guidance, wishlist, share, related items, and back-in-stock requests. The one-piece item model has no selectable variants or numeric category charts. |
-| 3 | Cart and checkout: guest/account persistence, merge, shipping, payment, confirmation | PARTIAL | `src/context/CartContext.tsx`, `BagSheet.tsx`, `BagPage.tsx`, and `CheckoutPage.tsx` support local guest carts, sign-in merge, cart drawer, and address validation. Cart quantities are one per unique find; shipping methods/costs, COD, and trusted order creation are still pending. |
-| 4 | Auth and account: email/password + Google, protection, profile, addresses, orders | PARTIAL | `src/context/AuthContext.tsx`, `AuthPage.tsx`, `AccountPage.tsx`, and `OrderPage.tsx` now support email/password, Google, OTP, profile editing, saved addresses, and order history/detail. OAuth and email confirmation need live provider configuration. |
-| 5 | Order lifecycle, tracking, admin CRUD | PARTIAL | `src/pages/OrderPage.tsx` shows a status timeline and tracking number; `src/pages/AdminPage.tsx` updates legacy products, normalized variant stock, order status/tracking, and coupons. Product creation/editing across both catalog models and status notifications remain incomplete. |
-| 6 | RLS on every table and authorization proof | PARTIAL | `supabase/migrations/20261115090000_store_foundation.sql`, `20261115092000_product_engagement.sql`, and `supabase/RLS.md` install owner/admin policies and manual checks. They are not yet applied or exercised against a live Supabase project; guest database writes are restricted to trusted endpoints. |
-| 7 | Indian policy pages and links | PARTIAL | `src/pages/legal/TermsPage.tsx`, `PrivacyPage.tsx`, and `RefundShippingPage.tsx` plus footer links cover policy routes. Their exact operational promises and checkout links still need a consistency review. |
-| 8 | Razorpay + COD using trusted Edge Functions | PARTIAL | `supabase/functions/razorpay-create-order/` and `razorpay-verify/` integrate Razorpay. Caller-provided amount is trusted, order integrity is weak, and the sequence is not atomic/idempotent. No COD or `razorpay-webhook`. |
-| 9 | Live search, results, wishlist | PARTIAL | `src/components/Navbar.tsx`, `src/pages/ShopPage.tsx`, and `src/pages/WishlistPage.tsx` provide live name suggestions, URL-backed name search, and an authenticated wishlist. Search results do not yet search full descriptions/brand or category suggestions. |
-| 10 | Server-validated coupons and free-shipping threshold | MISSING | No coupon schema, validation, UI, or shipping-threshold calculation. |
-| 11 | Transactional email via Supabase + Resend | MISSING | No email Edge Function, Resend integration, or templates. |
-| 12 | Mobile-first shopping/checkout polish | PARTIAL | Existing layouts use responsive Tailwind classes and product images have a mobile scroll strip. No verified 360/768/1280 pass, sticky purchase bar, filter bottom sheet, or documented touch-target/overflow audit. |
-| 13 | Responsive optimized images and loading behavior | PARTIAL | Product images use fixed-ratio media containers and the CSS includes fade-in behavior. No Supabase transform variants/WebP, blur-up placeholder, systematic lazy loading, or hero `fetchpriority`. |
-| 14 | Verified-purchase reviews with moderation/photos | MISSING | No reviews schema, UI, delivered-order eligibility, photo upload, ratings, or moderation. |
-| 15 | Support and engagement features | PARTIAL | `src/pages/ContactPage.tsx` saves contact messages; `ProductPage.tsx` saves stock notifications; footer links Instagram and existing sell submissions remain. WhatsApp CTA and notification emails are pending. |
-| 16 | Brand content, homepage, editable copy | PARTIAL | `src/pages/HomePage.tsx` has a hero, new arrivals, and sell CTA; `src/pages/AboutPage.tsx` has brand content. No centralized `src/content/brand.ts`, featured category section, or trust strip. |
-| 17 | Empty states and custom 404 | PARTIAL | `src/App.tsx`, `src/pages/SimplePage.tsx`, `WishlistPage.tsx`, `OrderPage.tsx`, and the shop/product/bag pages provide a custom 404 and key empty/error states. Error and retry coverage still needs a full async-state sweep. |
-| 18 | SEO/sharing and repository quality | PARTIAL | No React Helmet, canonical/OG/Twitter metadata, Product JSON-LD, generated sitemap/robots, README setup guide, LICENSE, `REPO_SETUP.md`, or GitHub Actions workflow. No Lighthouse run recorded. |
-
-## Suggested implementation phases
-
-1. Foundation: routes/layout, domain schema and seed, environment example, shared loading/error patterns.
-2. Core store: listing/detail, cart/checkout, account/order pages, policy/support content, and RLS repair.
-3. Payments: trusted server totals, Razorpay lifecycle/webhook, COD, stock safety, and email notifications.
-4. Discovery and polish: search, wishlist, coupons, reviews, mobile/image improvements, brand content, SEO, docs and CI.
-
-The requested live end-to-end payment/email/admin tests require configured Supabase, Google OAuth, Razorpay test credentials, Resend, and provisioned user/admin accounts. None of those external settings were confirmed during this source audit.
+The legacy `items` catalog still drives current shop routes while normalized `products`/`product_variants` also exist. New entries are seeded in the normalized schema; migrating the UI to one canonical catalog is a follow-up before operating both sets of inventory.

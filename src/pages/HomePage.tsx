@@ -3,6 +3,8 @@ import { supabase, type Item } from '@/lib/supabase';
 import { Link } from '@/router/Router';
 import { ItemCard } from '@/components/ItemCard';
 import { ArrowRight } from 'lucide-react';
+import { brand } from '@/content/brand';
+import { Helmet } from 'react-helmet-async';
 
 export function HomePage() {
   const [featured, setFeatured] = useState<Item[]>([]);
@@ -25,6 +27,7 @@ export function HomePage() {
 
   return (
     <div>
+      <Helmet><meta property="og:image" content={heroPhoto} /><meta name="twitter:image" content={heroPhoto} /></Helmet>
       {/* Hero */}
       <section className="relative w-full" style={{ height: '90vh', minHeight: '480px' }}>
         <div className="absolute inset-0 overflow-hidden">
@@ -41,7 +44,7 @@ export function HomePage() {
                 One of one.
               </h1>
               <p className="text-lg md:text-xl text-ink-2 mb-8" style={{ color: 'var(--ink-2)' }}>
-                Thrifted pieces, never restocked.
+                {brand.description}
               </p>
               <Link to="/shop" className="btn btn-primary">
                 Shop the drop
@@ -49,6 +52,27 @@ export function HomePage() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="page py-16 md:py-24" aria-labelledby="categories-title">
+        <div className="flex items-end justify-between gap-5 mb-8 md:mb-12">
+          <div><p className="label mb-2">A considered collection</p><h2 id="categories-title" style={{ fontWeight: 400 }}>Find your kind of piece</h2></div>
+          <Link to="/shop" className="text-link hidden sm:inline-flex items-center gap-2">Shop all <ArrowRight size={14} /></Link>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+          {brand.categories.map((category, index) => (
+            <Link key={category.slug} to={`/shop/${category.slug}`} className="group p-5 md:p-7 min-h-40 md:min-h-52 flex flex-col justify-between border transition-colors hover:bg-[color:var(--sunken)]" style={{ borderColor: 'var(--hairline)' }}>
+              <span className="label">0{index + 1} / COLLECTION</span>
+              <span><span className="font-display text-2xl md:text-3xl block mb-2" style={{ fontWeight: 400 }}>{category.title}</span><span className="text-sm" style={{ color: 'var(--ink-2)' }}>{category.note}</span></span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y" style={{ borderColor: 'var(--hairline)', backgroundColor: 'var(--sunken)' }} aria-label="Shopping promises">
+        <div className="page py-8 md:py-10 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 text-center">
+          {[['One of one', 'Every listing is a single piece.'], ['Secure checkout', 'Pay online with Razorpay or choose COD.'], ['Carefully considered', 'Condition and details are shown honestly.']].map(([title, detail]) => <div key={title}><p className="font-display text-xl mb-1" style={{ fontWeight: 400 }}>{title}</p><p className="text-sm" style={{ color: 'var(--ink-2)' }}>{detail}</p></div>)}
         </div>
       </section>
 
