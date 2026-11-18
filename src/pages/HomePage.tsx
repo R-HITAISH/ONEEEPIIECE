@@ -1,153 +1,77 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase, type Item } from '@/lib/supabase';
 import { Link } from '@/router/Router';
 import { ItemCard } from '@/components/ItemCard';
-import { ArrowRight } from 'lucide-react';
+import { HangTag } from '@/components/HangTag';
 import { brand } from '@/content/brand';
 import { Helmet } from 'react-helmet-async';
+import { getDevMode } from '@/lib/devMode';
+import { productPath } from '@/lib/utils';
 
 export function HomePage() {
   const [featured, setFeatured] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const devMode = getDevMode();
 
   useEffect(() => {
-    supabase
-      .from('items')
-      .select('*')
-      .eq('status', 'available')
-      .order('created_at', { ascending: false })
-      .limit(4)
-      .then(({ data }) => {
-        if (data) setFeatured(data);
+    if (import.meta.env.DEV && devMode) {
+      let active = true;
+      void import('@/lib/devFixtures').then(({ generate300Items, worstCaseItems }) => {
+        if (!active) return;
+        const rows = devMode === '300' ? generate300Items() : devMode === 'one' ? worstCaseItems.slice(0, 1) : devMode === 'empty' ? [] : worstCaseItems.filter((item) => item.status === 'available');
+        setFeatured(rows.slice(0, 4));
         setLoading(false);
       });
-  }, []);
+      return () => { active = false; };
+    }
+    let active = true;
+    supabase.from('items').select('*').eq('status', 'available').order('created_at', { ascending: false }).limit(12)
+      .then(({ data }) => { if (active && data) setFeatured(data); if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [devMode]);
 
-  const heroPhoto = featured[0]?.photos?.[0] ?? 'https://images.pexels.com/photos/5675657/pexels-photo-5675657.jpeg?auto=compress&cs=tinysrgb&w=1600';
+  const heroItem = useMemo(() => featured.find((item) => item.photos?.some(Boolean)) ?? featured[0], [featured]);
+  const heroPhoto = heroItem?.photos?.find(Boolean);
+  const stories = featured.filter((item) => item.story).slice(0, 3);
 
-  return (
-    <div>
-      <Helmet><meta property="og:image" content={heroPhoto} /><meta name="twitter:image" content={heroPhoto} /></Helmet>
-      {/* Hero */}
-      <section className="relative w-full" style={{ height: '90vh', minHeight: '480px' }}>
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={heroPhoto}
-            alt={featured[0]?.name ?? 'Thrifted streetwear'}
-            className="w-full h-full object-cover"
-          />
+  return <div>
+    <Helmet>{heroPhoto && <><meta property="og:image" content={heroPhoto} /><meta name="twitter:image" content={heroPhoto} /></>}</Helmet>
+    <section className="page home-hero" aria-labelledby="home-title">
+      <div className="home-hero-copy">
+        <p className="label mb-5">Second-hand, thoughtfully found</p>
+        <h1 id="home-title" className="home-display">Every piece<br /><em>has a story.</em></h1>
+        <p className="home-hero-subline">Second-hand pieces, checked by hand and told honestly. Read where each one came from before you wear it.</p>
+        <Link to="/shop" className="btn btn-primary">Shop pieces</Link>
+        <p className="home-hero-note">Found in India · Checked by hand</p>
+      </div>
+      <div className="home-hero-visual">
+        <div className="home-hero-image product-media">
+          {heroPhoto ? <img src={heroPhoto} alt={`${heroItem?.name ?? 'Second-hand piece'}${heroItem ? `, size ${heroItem.size}, ${heroItem.condition}` : ''}`} fetchPriority="high" /> : <div className="hero-empty" role="img" aria-label="A quiet space for the next piece" />}
         </div>
-        <div className="absolute inset-0 flex items-end" style={{ background: 'linear-gradient(to top, rgba(246,244,239,0.9) 0%, rgba(246,244,239,0.3) 40%, transparent 70%)' }}>
-          <div className="page w-full pb-12 md:pb-16">
-            <div className="max-w-2xl">
-              <h1 className="font-display text-ink mb-3" style={{ fontWeight: 400 }}>
-                One of one.
-              </h1>
-              <p className="text-lg md:text-xl text-ink-2 mb-8" style={{ color: 'var(--ink-2)' }}>
-                {brand.description}
-              </p>
-              <Link to="/shop" className="btn btn-primary">
-                Shop the drop
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+        {heroItem && <HangTag item={heroItem} animated />}
+        <span className="hero-image-caption">{heroItem?.name ?? 'A story waiting to be found'}</span>
+      </div>
+    </section>
 
-      <section className="page py-16 md:py-24" aria-labelledby="categories-title">
-        <div className="flex items-end justify-between gap-5 mb-8 md:mb-12">
-          <div><p className="label mb-2">A considered collection</p><h2 id="categories-title" style={{ fontWeight: 400 }}>Find your kind of piece</h2></div>
-          <Link to="/shop" className="text-link hidden sm:inline-flex items-center gap-2">Shop all <ArrowRight size={14} /></Link>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
-          {brand.categories.map((category, index) => (
-            <Link key={category.slug} to={`/shop/${category.slug}`} className="group p-5 md:p-7 min-h-40 md:min-h-52 flex flex-col justify-between border transition-colors hover:bg-[color:var(--sunken)]" style={{ borderColor: 'var(--hairline)' }}>
-              <span className="label">0{index + 1} / COLLECTION</span>
-              <span><span className="font-display text-2xl md:text-3xl block mb-2" style={{ fontWeight: 400 }}>{category.title}</span><span className="text-sm" style={{ color: 'var(--ink-2)' }}>{category.note}</span></span>
-            </Link>
-          ))}
-        </div>
-      </section>
+    <section className="page home-stories" aria-labelledby="stories-title">
+      <div className="section-heading"><div><p className="label mb-2">A little more than what you see</p><h2 id="stories-title">Pieces with a past</h2></div><Link to="/shop" className="text-link">Explore pieces</Link></div>
+      {stories.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8">{stories.map((item) => <article key={item.id} className="story-teaser">
+        <Link to={productPath(item.name, item.id)} className="story-teaser-image product-media aspect-[4/5]">{item.photos[0] ? <img src={item.photos[0]} alt={`${item.name}, size ${item.size}, ${item.condition}`} loading="lazy" /> : <span className="hero-empty" />}</Link>
+        <h3 className="mt-4 mb-2">{item.name}</h3><p>{item.story?.split(/(?<=[.!?])\s/)[0]}</p>
+      </article>)}</div> : <p className="quiet-note">Each piece has a story. We’ll share it here when one is available.</p>}
+    </section>
 
-      <section className="border-y" style={{ borderColor: 'var(--hairline)', backgroundColor: 'var(--sunken)' }} aria-label="Shopping promises">
-        <div className="page py-8 md:py-10 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 text-center">
-          {[['One of one', 'Every listing is a single piece.'], ['Secure checkout', 'Pay online with Razorpay or choose COD.'], ['Carefully considered', 'Condition and details are shown honestly.']].map(([title, detail]) => <div key={title}><p className="font-display text-xl mb-1" style={{ fontWeight: 400 }}>{title}</p><p className="text-sm" style={{ color: 'var(--ink-2)' }}>{detail}</p></div>)}
-        </div>
-      </section>
+    <section className="home-qualities" aria-label="How we find and share pieces"><div className="page home-qualities-inner">
+      {[['Found.', 'Every piece is sourced second-hand and checked by hand.'], ['Checked.', 'Condition and details are shown honestly.'], ['Yours to wear.', 'Good clothes deserve another life.']].map(([title, body]) => <div key={title}><h3>{title}</h3><p>{body}</p></div>)}
+    </div></section>
 
-      {/* New in */}
-      <section className="page" style={{ paddingTop: 'clamp(60px, 10vw, 120px)', paddingBottom: 'clamp(60px, 10vw, 120px)' }}>
-        <div className="flex items-end justify-between mb-10 md:mb-14">
-          <h2 style={{ fontWeight: 400 }}>New in</h2>
-          <Link to="/shop" className="text-link">
-            View all
-          </Link>
-        </div>
+    <section className="page home-new" aria-labelledby="new-title">
+      <div className="section-heading"><div><p className="label mb-2">A fresh find</p><h2 id="new-title">New in</h2></div><Link to="/shop" className="text-link">View all pieces</Link></div>
+      {loading ? <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[4/5]" style={{ background: 'var(--sunken)' }} />)}</div> : featured.length === 0 ? <p className="quiet-note">The collection is quiet for now. Check back soon.</p> : <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">{featured.slice(0, 4).map((item) => <ItemCard key={item.id} item={item} />)}</div>}
+    </section>
 
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[14px] md:gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse" style={{ background: 'var(--sunken)' }} />
-            ))}
-          </div>
-        ) : featured.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="label">The drop is empty. Check back soon.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[14px] md:gap-6">
-            {featured.map((item, i) => (
-              <ItemCard key={item.id} item={item} index={i} />
-            ))}
-          </div>
-        )}
-      </section>
+    <section className="page home-categories" aria-label="Browse categories">{brand.categories.map((category) => <Link key={category.slug} to={`/shop/${category.slug}`} className="home-category">{category.title}</Link>)}</section>
 
-      {/* Night band */}
-      <section style={{ backgroundColor: 'var(--night)', color: 'var(--night-ink)' }}>
-        <div className="page" style={{ paddingTop: 'clamp(60px, 10vw, 120px)', paddingBottom: 'clamp(60px, 10vw, 120px)' }}>
-          <div className="grid md:grid-cols-3 gap-0">
-            {[
-              { title: 'Found once.', body: 'Every piece is sourced by hand from thrift racks, estate sales, and private collections across India.' },
-              { title: 'Yours alone.', body: 'No restocks, no reissues, no waitlists. When you buy it, it becomes the only one that exists in the world.' },
-              { title: 'Never restocked.', body: 'Once sold, it is gone for good. We do not reproduce, reorder, or source a replacement.' },
-            ].map((col, i) => (
-              <div
-                key={col.title}
-                className={`py-8 md:py-0 md:px-10 ${i > 0 ? 'md:border-l' : ''}`}
-                style={{ borderColor: 'rgba(246,244,239,0.12)', borderTop: i > 0 ? '1px solid rgba(246,244,239,0.12)' : undefined }}
-              >
-                <h3 className="font-display text-2xl mb-3" style={{ fontWeight: 400 }}>{col.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(246,244,239,0.6)' }}>{col.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Sell to us CTA */}
-      <section className="page" style={{ paddingTop: 'clamp(60px, 10vw, 120px)', paddingBottom: 'clamp(60px, 10vw, 120px)' }}>
-        <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-          <div>
-            <h2 className="mb-4" style={{ fontWeight: 400 }}>Have something to sell?</h2>
-            <p className="text-base mb-8" style={{ color: 'var(--ink-2)' }}>
-              Send us your pieces. Tell us the size, condition and your price.
-            </p>
-            <Link to="/sell" className="btn btn-primary">
-              Sell to us
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-          <div className="product-media aspect-[4/5] md:aspect-[4/3]">
-            <img
-              src="https://images.pexels.com/photos/3998648/pexels-photo-3998648.jpeg?auto=compress&cs=tinysrgb&w=1200"
-              alt="Folded vintage clothing"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-      </section>
-    </div>
-  );
+    <section className="page sell-invitation"><div><p className="label mb-3">A good piece deserves another life</p><h2>Have something to sell?</h2><p className="mt-4">Tell us what you have. We’ll take it from there.</p></div><Link to="/sell" className="btn btn-primary">Sell to us</Link></section>
+  </div>;
 }

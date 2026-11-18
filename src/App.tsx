@@ -27,6 +27,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Seo } from '@/components/Seo';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { getDevMode } from '@/lib/devMode';
 
 function ProductRoute() {
   const { slug = '' } = useParams();
@@ -43,7 +44,7 @@ function StoreRoutes() {
   const [bagOpen, setBagOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--paper)' }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surface)' }}>
       <Seo />
       <Navbar onBagClick={() => setBagOpen(true)} />
       <main className="page-in flex-1">
@@ -72,7 +73,7 @@ function StoreRoutes() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/sell" element={<SellPage />} />
           <Route path="/admin/*" element={<AdminPage />} />
-          <Route path="*" element={<SimplePage title="Page not found" description="We couldn’t find that page. Explore the latest one-of-one pieces instead." action={{ label: 'Shop all pieces', to: '/shop' }} />} />
+          <Route path="*" element={<SimplePage title="Page not found" description="We couldn’t find that page. Explore the latest pieces instead." action={{ label: 'Shop all pieces', to: '/shop' }} />} />
         </Routes>
         </Suspense>
       </main>
@@ -89,10 +90,10 @@ function LegacyProductRoute() {
 }
 
 function App() {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured && !getDevMode()) {
     return <main className="min-h-screen bg-paper px-6 py-16 flex items-center justify-center">
       <section className="max-w-xl w-full border p-8 md:p-12" style={{ borderColor: 'var(--hairline)' }}>
-        <p className="label mb-4">ONEEEPIIECE · PREVIEW SETUP</p>
+        <p className="label mb-4">ONEPIECE · PREVIEW SETUP</p>
         <h1 className="font-display text-4xl mb-4" style={{ fontWeight: 400 }}>Connect the store to preview it.</h1>
         <p className="leading-relaxed mb-6" style={{ color: 'var(--ink-2)' }}>This storefront needs your Supabase project URL and public anon key to load products, accounts and the bag. Copy <code>.env.example</code> to <code>.env.local</code>, add those two values, then restart the dev server.</p>
         <p className="label">No service-role or Razorpay secret belongs in the browser.</p>

@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
 
 type ShippingAddress = {
   name: string;
@@ -13,19 +14,10 @@ type CreateOrderRequest = { item_ids: string[]; shipping: ShippingAddress; payme
 type CheckoutOrder = { order_id: string; subtotal_inr: number; shipping_cost_inr: number; cod_fee_inr: number; total_inr: number; status: string };
 type RazorpayOrderResponse = { id: string; error?: { description?: string } };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('SITE_URL') ?? '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-  'Content-Type': 'application/json',
-};
-
-function respond(payload: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(payload), { status, headers: corsHeaders });
-}
-
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
+  const headers = corsHeaders(req);
+  const respond = (payload: Record<string, unknown>, status = 200) => new Response(JSON.stringify(payload), { status, headers });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (req.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
 
   const authorization = req.headers.get('Authorization');
@@ -59,7 +51,7 @@ Deno.serve(async (req: Request) => {
       p_shipping: normalizedShipping,
       p_payment_method: request.payment_method,
     });
-    if (orderError || !orderData) return respond({ error: orderError?.message ?? 'Could not reserve these pieces.' }, 409);
+    if (orderError || !orderData) return respond({ error: 'Could not reserve these pieces.' }, 409);
     const order = orderData as CheckoutOrder;
 
     if (request.payment_method === 'cod') {
@@ -76,12 +68,12 @@ Deno.serve(async (req: Request) => {
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}` },
-      body: JSON.stringify({ amount: order.total_inr * 100, currency: 'INR', receipt: order.order_id, notes: { oneeepiiece_order_id: order.order_id } }),
+      body: JSON.stringify({ amount: order.total_inr * 100, currency: 'INR', receipt: order.order_id, notes: { onepiece_order_id: order.order_id } }),
     });
     const razorpayOrder = await razorpayResponse.json() as RazorpayOrderResponse;
     if (!razorpayResponse.ok || !razorpayOrder.id) {
       await admin.rpc('release_checkout_order', { p_order_id: order.order_id, p_final_status: 'failed' });
-      return respond({ error: razorpayOrder.error?.description ?? 'Could not start payment. Please try again.' }, 502);
+      return respond({ error: 'Could not start payment. Please try again.' }, 502);
     }
 
     const { error: saveError } = await admin.from('orders').update({ razorpay_order_id: razorpayOrder.id, updated_at: new Date().toISOString() }).eq('id', order.order_id);
@@ -90,8 +82,8 @@ Deno.serve(async (req: Request) => {
       return respond({ error: 'Could not save the payment session.' }, 500);
     }
     return respond({ order_id: order.order_id, razorpay_order_id: razorpayOrder.id, key_id: keyId, total_inr: order.total_inr, shipping_cost_inr: order.shipping_cost_inr, cod_fee_inr: 0, status: 'pending' });
-  } catch (error) {
-    console.error('razorpay-create-order failed', error);
+  } catch {
+    console.error('razorpay-create-order failed');
     return respond({ error: 'Could not start checkout.' }, 500);
   }
 });

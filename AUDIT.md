@@ -1,4 +1,4 @@
-# ONEEEPIIECE storefront audit
+# ONEPIECE storefront audit
 
 Audit updated: 2026-11-15. This is a source and migration review. The Supabase project, deployed database, Edge Function secrets, OAuth providers, Razorpay, Resend, and production hosting were not accessible for live verification.
 
@@ -18,7 +18,7 @@ Audit updated: 2026-11-15. This is a source and migration review. The Supabase p
 | 12 | Mobile pass | Responsive Tailwind layouts and `src/pages/ProductPage.tsx` sticky purchase bar; responsive QA checked the unconfigured preview at 360/768/1280. | Store pages with real data were not visually checked; bottom-sheet filters and broader touch-target audit remain. |
 | 13 | Image delivery | `src/lib/utils.ts` maps public Supabase Storage images to WebP width transforms; item cards use srcset, lazy loading and fixed ratios; hero is high priority. | External/Pexels images cannot use Supabase transforms; no verified blur-up asset variants. |
 | 14 | Reviews and engagement | Contact, back-in-stock, Instagram link, optional configured WhatsApp CTA; normalized reviews table has delivered-order RLS and admin moderation policy. | Review submission, photos, ratings/averages and moderation UI are not implemented. WhatsApp number is intentionally blank until configured. |
-| 15 | Brand content | `src/content/brand.ts`, `src/pages/HomePage.tsx`, `src/pages/AboutPage.tsx` use ONEEEPIIECE copy, featured categories and a restrained trust strip. | About copy remains separately authored; verify final brand story and photo licensing with owner. |
+| 15 | Brand content | `src/content/brand.ts`, `src/pages/HomePage.tsx`, `src/pages/AboutPage.tsx` use ONEPIECE copy, featured categories and a restrained trust strip. | About copy remains separately authored; verify final brand story and photo licensing with owner. |
 | 16 | Empty/error states | Listing, product, bag, wishlist, orders and 404 surfaces provide empty/error/loading feedback. | A complete screen-by-screen retry and assistive-technology audit remains. |
 | 17 | SEO and sharing | `react-helmet-async`, `src/components/Seo.tsx`, product-specific canonical/OG/price metadata and Product JSON-LD, `scripts/generate-sitemap.mjs`, `robots.txt` output and semantic UI are present. | Lighthouse 90+ audit is not complete; set the real domain and Supabase env at build time. |
 | 18 | Repository quality | `.env.example`, README, `REPO_SETUP.md`, `LICENSE`, GitHub Actions, migration/RLS docs, sitemap generator and CI checks are present. | GitHub description/topics are suggestions only; no screenshot asset; dependency audit reports 22 npm advisories; verify CI on GitHub. |

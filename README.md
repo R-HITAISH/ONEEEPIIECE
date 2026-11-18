@@ -1,6 +1,6 @@
-# ONEEEPIIECE storefront
+# ONEPIECE storefront
 
-A mobile-first storefront for curated, one-of-one clothing in India. The interface uses a restrained warm-neutral palette and keeps the existing ONEEEPIIECE identity.
+A mobile-first storefront for curated second-hand clothing in India. The interface uses a restrained warm-neutral palette and keeps the existing ONEPIECE identity.
 
 ![Storefront screenshot placeholder](docs/storefront-screenshot.png)
 

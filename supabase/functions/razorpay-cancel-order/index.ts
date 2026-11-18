@@ -1,14 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
 
 type CancelRequest = { order_id: string };
-const headers = {
-  'Access-Control-Allow-Origin': Deno.env.get('SITE_URL') ?? '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-  'Content-Type': 'application/json',
-};
-
 Deno.serve(async (req: Request) => {
+  const headers = corsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
   const authorization = req.headers.get('Authorization');
@@ -27,8 +22,8 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await admin.rpc('release_checkout_order', { p_order_id: order_id, p_final_status: 'cancelled' });
     if (error) return new Response(JSON.stringify({ error: 'Could not release this order.' }), { status: 409, headers });
     return new Response(JSON.stringify({ cancelled: Boolean(data), status: order.status === 'pending' ? 'cancelled' : order.status }), { status: 200, headers });
-  } catch (error) {
-    console.error('razorpay-cancel-order failed', error);
+  } catch {
+    console.error('razorpay-cancel-order failed');
     return new Response(JSON.stringify({ error: 'Could not cancel this payment attempt.' }), { status: 500, headers });
   }
 });

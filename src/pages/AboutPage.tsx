@@ -1,5 +1,4 @@
 import { Link } from '@/router/Router';
-import { ArrowRight } from 'lucide-react';
 
 export function AboutPage() {
   return (
@@ -7,7 +6,7 @@ export function AboutPage() {
       {/* Hero — night band */}
       <section style={{ backgroundColor: 'var(--night)', color: 'var(--night-ink)' }}>
         <div className="page" style={{ paddingTop: 'clamp(4rem,8vw,8rem)', paddingBottom: 'clamp(4rem,8vw,8rem)' }}>
-          <p className="label mb-6" style={{ color: 'var(--brass)' }}>About ONEEEPIIECE</p>
+          <p className="label mb-6" style={{ color: 'var(--brass-text)' }}>About ONEPIECE</p>
           <h1 className="max-w-2xl" style={{ fontWeight: 400, color: 'var(--night-ink)' }}>
             We don't sell clothes.
             <br />
@@ -21,10 +20,9 @@ export function AboutPage() {
         <div className="grid md:grid-cols-3 gap-12 md:gap-16 max-w-[900px]">
           <div className="md:col-span-2 space-y-6">
             <p style={{ color: 'var(--ink)' }}>
-              Oneeepiiece started in a damp basement in Pune with three garbage bags of old
-              clothes and a camera phone. No investors, no warehouse, no supply chain. Just
-              one question: why does every resale platform look like a luxury boutique when
-              the clothes come from a thrift rack?
+              ONEPIECE is built around a simple idea: second-hand clothes deserve to be
+              seen clearly, described honestly, and worn again. Each listing gives you the
+              details you need to decide if a piece belongs in your life.
             </p>
             <p style={{ color: 'var(--ink)' }}>
               Every piece we list is a single physical unit. We photograph it honestly —
@@ -41,7 +39,7 @@ export function AboutPage() {
           </div>
           <div className="md:pt-4">
             <p className="label mb-1">Established</p>
-            <p className="font-display text-xl" style={{ fontWeight: 400 }}>2026 · Pune, India</p>
+            <p className="font-display text-xl" style={{ fontWeight: 400 }}>2026 · Bangalore, India</p>
           </div>
         </div>
       </section>
@@ -52,7 +50,7 @@ export function AboutPage() {
           <h2 style={{ fontWeight: 400, color: 'var(--night-ink)' }} className="mb-12">What we stand on</h2>
           <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
             {[
-              { title: 'One of one', body: 'Every item is a single unit. When it sells, it is removed from circulation. No reproductions.' },
+              { title: 'Found once', body: 'Every piece is sourced second-hand and checked by hand.' },
               { title: 'Honest condition', body: 'Three grades: like new, good condition, well worn. We tell you exactly what you are getting.' },
               { title: 'Fair resale', body: 'We price based on what a piece is worth, not what we think someone will pay. No artificial scarcity.' },
               { title: '10-minute lock', body: 'When you add to bag, the item is yours for 10 minutes. Nobody else can buy it while you decide.' },
@@ -71,8 +69,7 @@ export function AboutPage() {
         <h2 style={{ fontWeight: 400 }} className="mb-4">Ready to dig through the racks?</h2>
         <p className="label mb-8">New pieces drop regularly. Once they're gone, they're gone.</p>
         <Link to="/shop" className="btn btn-primary">
-          Shop the drop
-          <ArrowRight size={16} />
+          Shop pieces
         </Link>
       </section>
     </div>

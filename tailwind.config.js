@@ -23,7 +23,7 @@ export default {
         success: '#2E5E45',
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['Anton', 'sans-serif'],
         body: ['Work Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['Courier New', 'monospace'],
       },

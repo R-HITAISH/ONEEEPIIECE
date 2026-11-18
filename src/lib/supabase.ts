@@ -23,6 +23,7 @@ export type Item = {
   condition: string;
   price_inr: number;
   description: string | null;
+  story?: string | null;
   photos: string[];
   status: string;
   brand: string | null;
@@ -85,6 +86,7 @@ export type SellSubmission = {
   asking_price_inr: number;
   photos: string[];
   status: string;
+  story?: string | null;
   created_at: string;
 };
 

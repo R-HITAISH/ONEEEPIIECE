@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useRouter } from '@/router/Router';
 import { AlertTriangle, Loader2, ArrowLeft } from 'lucide-react';
 import { validateIndianPhone } from '@/services/otpService';
+import { safeReturnTo } from '@/lib/safeReturnTo';
 
 function OtpInput({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled: boolean }) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -71,10 +72,12 @@ export function AuthPage() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailNotice, setEmailNotice] = useState<string | null>(null);
-  const returnTo = (() => {
+  const returnTo = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('returnTo') || '/account';
-  })();
+    const queryValue = params.get('returnTo');
+    if (queryValue) return safeReturnTo(queryValue);
+    return safeReturnTo(sessionStorage.getItem('onepiece_return_to'));
+  }, []);
 
   const doVerify = useCallback(async (code: string) => {
     setOtpError(null);
@@ -127,7 +130,7 @@ export function AuthPage() {
     setOtpError(null);
     setGoogleLoading(true);
     // Store return path in sessionStorage for OAuth redirect
-    sessionStorage.setItem('oneeepiiece_return_to', returnTo);
+    sessionStorage.setItem('onepiece_return_to', returnTo);
     const result = await signInWithGoogle();
     if (result.error) {
       setOtpError(result.error);

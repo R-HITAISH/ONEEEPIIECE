@@ -28,12 +28,12 @@ export function Footer() {
             </div>
             <div>
               <p className="label mb-3">Connect</p>
-              <a href="mailto:support@oneeepiiece.in" className="text-link flex items-center gap-1.5 mb-2">
+              <a href="mailto:support@onepiece.in" className="text-link flex items-center gap-1.5 mb-2">
                 <Mail size={13} />
-                support@oneeepiiece.in
+                support@onepiece.in
               </a>
               <a
-                href="https://instagram.com/oneeepiiece"
+                href="https://instagram.com/onepiece"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-link flex items-center gap-1.5"
@@ -47,7 +47,7 @@ export function Footer() {
 
         <div className="hairline-t mt-16 pt-8">
           <p className="label" style={{ color: 'var(--ink-2)' }}>
-            &copy; 2026 ONEEEPIIECE, Bengaluru
+            &copy; 2026 ONEPIECE, Bangalore
           </p>
         </div>
       </div>

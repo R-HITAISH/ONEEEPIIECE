@@ -13,12 +13,14 @@ export function ItemCard({ item }: { item: Item; index?: number }) {
     if (imgRef.current?.complete) setLoaded(true);
   }, []);
 
-  const altText = `${item.name} — ${item.condition}`;
+  const altText = `${item.name}, size ${item.size || 'not listed'}, ${item.condition}`;
+  const storyExcerpt = item.story?.trim().replace(/\s+/g, ' ');
+  const excerpt = storyExcerpt && (storyExcerpt.length > 90 ? `${storyExcerpt.slice(0, Math.max(1, storyExcerpt.slice(0, 90).lastIndexOf(' ')))}…` : storyExcerpt);
 
   return (
     <Link to={productPath(item.name, item.id)} className="product-card block">
       <div className="product-media aspect-[4/5] relative">
-        <img
+        {item.photos[0] ? <img
           ref={imgRef}
           src={item.photos[0] ? responsiveImageUrl(item.photos[0], 640) : ''}
           srcSet={item.photos[0] ? `${responsiveImageUrl(item.photos[0], 360)} 360w, ${responsiveImageUrl(item.photos[0], 640)} 640w, ${responsiveImageUrl(item.photos[0], 960)} 960w` : undefined}
@@ -27,7 +29,7 @@ export function ItemCard({ item }: { item: Item; index?: number }) {
           className={`product-img w-full h-full object-cover ${loaded ? 'is-loaded' : ''} ${sold ? 'grayscale opacity-60' : ''}`}
           loading="lazy"
           onLoad={() => setLoaded(true)}
-        />
+        /> : <div className="w-full h-full" aria-hidden="true" />}
         {sold && (
           <span className="absolute top-3 left-3 px-2 py-1 bg-ink text-paper text-xs font-medium uppercase tracking-wider">
             Sold
@@ -41,11 +43,9 @@ export function ItemCard({ item }: { item: Item; index?: number }) {
       </div>
       <div className="pt-3">
         <h3 className="text-sm leading-snug truncate text-ink">{item.name}</h3>
-        <p className="label mt-1">Size {item.size} · {item.condition}</p>
-        <div className="flex items-baseline justify-between mt-2">
-          <span className="price text-sm text-ink">{formatINR(item.price_inr)}</span>
-          <span className="label" style={{ color: 'var(--brass-text)' }}>1 of 1</span>
-        </div>
+        <p className="item-card-meta mt-1">{item.size ? `Size ${item.size} · ` : ''}{item.condition}</p>
+        {excerpt && <p className="item-card-story">{excerpt}</p>}
+        <p className="price text-sm text-ink mt-2">{formatINR(item.price_inr)}</p>
       </div>
     </Link>
   );

@@ -165,6 +165,7 @@ export function AccountPage() {
           <label className="label-field">Email<input type="email" value={email} readOnly className="input mt-2" style={{ color: 'var(--ink-2)' }} /></label>
           <button className="btn btn-secondary">Save profile</button>
         </form>
+        <Link className="text-link inline-block mt-5" to="/contact?subject=Account%20deletion%20request">Request account deletion</Link>
       </section>
 
       <section className="mt-12 hairline-t pt-8">

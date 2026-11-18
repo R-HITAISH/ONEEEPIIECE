@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase, type Item } from '@/lib/supabase';
 import { Link, useRouter } from '@/router/Router';
 import { useCart } from '@/context/CartContext';
@@ -7,6 +7,10 @@ import { ItemCard } from '@/components/ItemCard';
 import { formatINR, productPath } from '@/lib/utils';
 import { ArrowLeft, ShoppingBag, AlertTriangle, ChevronDown, Heart, Share2, Ruler, X } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { HangTag } from '@/components/HangTag';
+import { getDevMode } from '@/lib/devMode';
+import { HoneypotField } from '@/components/HoneypotField';
+import { isSimpleBotSubmission } from '@/lib/honeypot';
 
 export function ProductPage({ itemId }: { itemId: string }) {
   const { navigate } = useRouter();
@@ -27,10 +31,22 @@ export function ProductPage({ itemId }: { itemId: string }) {
   const [relatedItems, setRelatedItems] = useState<Item[]>([]);
   const [notifyEmail, setNotifyEmail] = useState(user?.email ?? '');
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
+  const notifyStartedAt = useRef(Date.now());
 
   useEffect(() => {
     setLoading(true);
     let active = true;
+    const devMode = getDevMode();
+    if (import.meta.env.DEV && devMode) {
+      void import('@/lib/devFixtures').then(({ worstCaseItems }) => {
+        if (!active) return;
+        const fixture = worstCaseItems.find((row) => row.id === itemId) ?? worstCaseItems[0];
+        setItem(fixture);
+        setRelatedItems(worstCaseItems.filter((row) => row.id !== fixture.id && row.status === 'available').slice(0, 4));
+        setLoading(false);
+      });
+      return () => { active = false; };
+    }
     supabase
       .from('items')
       .select('*')
@@ -62,6 +78,13 @@ export function ProductPage({ itemId }: { itemId: string }) {
 
   useEffect(() => {
     if (!item) return;
+    if (import.meta.env.DEV && getDevMode()) {
+      let active = true;
+      void import('@/lib/devFixtures').then(({ worstCaseItems }) => {
+        if (active) setRelatedItems(worstCaseItems.filter((row) => row.id !== item.id && row.status === 'available').slice(0, 4));
+      });
+      return () => { active = false; };
+    }
     let active = true;
     supabase.from('items').select('*').eq('category', item.category).eq('status', 'available').neq('id', item.id)
       .order('created_at', { ascending: false }).limit(4)
@@ -70,7 +93,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
   }, [item]);
 
   useEffect(() => {
-    if (!item) return;
+    if (!item || (import.meta.env.DEV && getDevMode())) return;
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('items')
@@ -128,6 +151,10 @@ export function ProductPage({ itemId }: { itemId: string }) {
 
   const notifyWhenAvailable = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSimpleBotSubmission(event.currentTarget as HTMLFormElement, notifyStartedAt.current)) {
+      setNotifyMessage('We’ll email you if this piece becomes available.');
+      return;
+    }
     if (!item || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notifyEmail)) {
       setNotifyMessage('Enter a valid email address.');
       return;
@@ -173,8 +200,8 @@ export function ProductPage({ itemId }: { itemId: string }) {
   const canonicalUrl = `${(import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') ?? window.location.origin}${productPath(item.name, item.id)}`;
   const productSchema = {
     '@context': 'https://schema.org', '@type': 'Product', name: item.name,
-    description: item.description ?? `${item.condition} ${item.category} from ONEEEPIIECE`, image: item.photos,
-    brand: { '@type': 'Brand', name: item.brand ?? 'ONEEEPIIECE' }, sku: item.id,
+    description: item.description ?? `${item.condition} ${item.category} from ONEPIECE`, image: item.photos,
+    brand: { '@type': 'Brand', name: item.brand ?? 'ONEPIECE' }, sku: item.id,
     itemCondition: 'https://schema.org/UsedCondition', url: canonicalUrl,
     offers: { '@type': 'Offer', priceCurrency: 'INR', price: item.price_inr, availability: sold ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: canonicalUrl },
   };
@@ -182,18 +209,18 @@ export function ProductPage({ itemId }: { itemId: string }) {
   return (
     <div className="page" style={{ paddingTop: '1.5rem', paddingBottom: '4rem' }}>
       <Helmet>
-        <title>{item.name} | ONEEEPIIECE</title>
-        <meta name="description" content={`${item.condition} ${item.category}. One of one, found once and never restocked.`} />
+        <title>{item.name} | ONEPIECE</title>
+        <meta name="description" content={`${item.condition} ${item.category}. Found once, checked by hand, never restocked.`} />
         <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:type" content="product" /><meta property="og:title" content={`${item.name} | ONEEEPIIECE`} />
-        <meta property="og:description" content={item.description ?? `${item.condition} ${item.category} — one of one.`} />
+        <meta property="og:type" content="product" /><meta property="og:title" content={`${item.name} | ONEPIECE`} />
+        <meta property="og:description" content={item.description ?? `${item.condition} ${item.category}. Found once and never restocked.`} />
         {item.photos[0] && <meta property="og:image" content={item.photos[0]} />}
         {item.photos[0] && <meta name="twitter:image" content={item.photos[0]} />}
         <meta property="product:price:amount" content={String(item.price_inr)} /><meta property="product:price:currency" content="INR" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
       </Helmet>
-      <Link to="/shop" className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: 'var(--ink-2)' }}>
+      <Link to="/shop" className="inline-flex min-h-11 items-center gap-2 text-sm mb-8" style={{ color: 'var(--ink-2)' }}>
         <ArrowLeft size={15} />
         Back to shop
       </Link>
@@ -245,7 +272,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
 
         {/* Info column */}
         <div className="md:sticky md:top-24 md:self-start">
-          <p className="label mb-2" style={{ color: 'var(--brass-text)' }}>1 of 1</p>
+          <HangTag item={item} showPrice={!sold} />
           <h1 className="font-display text-3xl md:text-4xl mb-4" style={{ fontWeight: 400 }}>
             {item.name}
           </h1>
@@ -302,6 +329,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
                 <p className="font-display text-2xl" style={{ fontWeight: 400, color: 'var(--ink-2)' }}>Sold</p>
                 <Link to="/shop" className="text-link">See similar pieces</Link>
                 <form onSubmit={notifyWhenAvailable} className="max-w-md space-y-3 pt-3">
+                  <HoneypotField onFilled={() => setNotifyMessage('We’ll email you if this piece becomes available.')} />
                   <label htmlFor="stock-notify-email" className="label-field">Get an email if this piece becomes available</label>
                   <div className="flex gap-2"><input id="stock-notify-email" type="email" required value={notifyEmail} onChange={(event) => setNotifyEmail(event.target.value)} className="input" placeholder="Email address" /><button className="btn btn-primary shrink-0" type="submit">Notify me</button></div>
                   {notifyMessage && <p className="label" role="status">{notifyMessage}</p>}
@@ -371,6 +399,10 @@ export function ProductPage({ itemId }: { itemId: string }) {
         </div>
       </div>
 
+      {item.story?.trim() && <section className="piece-story" aria-label="The story of this piece">
+        {(() => { const story = item.story.trim(); const match = story.match(/^[\s\S]*?[.!?](?=\s|$)/); const lead = match?.[0] ?? story; const rest = match ? story.slice(lead.length).replace(/^\s+/, '') : ''; return <><p className="piece-story-lead">{lead}</p>{rest && <p className="piece-story-body">{rest}</p>}</>; })()}
+      </section>}
+
       {relatedItems.length > 0 && <section className="mt-16 md:mt-24" aria-labelledby="related-title">
         <h2 id="related-title" className="font-display text-2xl mb-6" style={{ fontWeight: 400 }}>Similar pieces</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">{relatedItems.map((related, index) => <ItemCard key={related.id} item={related} index={index} />)}</div>
@@ -389,7 +421,7 @@ export function ProductPage({ itemId }: { itemId: string }) {
         </section>
       </div>}
       {!sold && !locked && <div className="md:hidden fixed z-40 bottom-0 inset-x-0 border-t bg-paper/95 backdrop-blur-sm px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-4" style={{ borderColor: 'var(--hairline)' }}>
-        <div className="min-w-0"><p className="label truncate">One of one</p><p className="price">{formatINR(item.price_inr)}</p></div>
+        <div className="min-w-0"><p className="label truncate">{item.size ? `Size ${item.size}` : item.condition}</p><p className="price">{formatINR(item.price_inr)}</p></div>
         <button onClick={inBag ? () => navigate('/checkout') : handleAddToCart} disabled={adding} className="btn btn-primary flex-1 min-h-11">{inBag ? 'Go to checkout' : adding ? 'Reserving…' : 'Add to bag'}</button>
       </div>}
     </div>

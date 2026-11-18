@@ -53,8 +53,8 @@ Deno.serve(async (req: Request) => {
       if (error) throw error;
     }
     return new Response(JSON.stringify({ received: true }), { status: 200, headers });
-  } catch (error) {
-    console.error('razorpay-webhook failed', error);
+  } catch {
+    console.error('razorpay-webhook failed');
     return new Response('Webhook processing failed', { status: 500 });
   }
 });

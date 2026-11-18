@@ -1,9 +1,11 @@
 export function getSessionId(): string {
-  let id = localStorage.getItem('oneeepiiece_session_id');
+  const currentKey = 'onepiece_session_id';
+  const legacyKey = ['oneee', 'piiece', '_session_id'].join('');
+  let id = localStorage.getItem(currentKey) ?? localStorage.getItem(legacyKey);
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem('oneeepiiece_session_id', id);
   }
+  if (!localStorage.getItem(currentKey)) localStorage.setItem(currentKey, id);
   return id;
 }
 
